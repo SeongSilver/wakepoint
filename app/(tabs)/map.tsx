@@ -403,8 +403,8 @@ export default function MapScreen() {
                 disabled={saving || geocoding}
                 style={{
                   backgroundColor: saving || geocoding ? '#A5B4FC' : '#4F46E5',
-                  borderRadius: 14,
-                  paddingVertical: 15,
+                  borderRadius: 9999,
+                  paddingVertical: 14,
                   alignItems: 'center',
                 }}
               >

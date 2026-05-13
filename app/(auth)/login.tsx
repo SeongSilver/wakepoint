@@ -39,7 +39,6 @@ export default function LoginScreen() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      // Expo Go는 wakepoint:// 스킴을 인식하지 못하므로 환경에 맞는 URI를 동적으로 생성
       const redirectTo = Linking.createURL('auth/callback');
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -57,124 +56,83 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1, backgroundColor: '#fff' }}
+      className="flex-1 bg-white"
     >
-      <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 24 }}>
-        {/* 헤더 */}
-        <View style={{ alignItems: 'center', marginBottom: 48 }}>
-          <Text style={{ fontSize: 32, fontWeight: '700', color: '#4F46E5' }}>
-            WakePoint
+      <View className="flex-1 justify-center px-6">
+        {/* 로고 */}
+        <View className="items-center mb-12">
+          <Text className="text-4xl font-semibold tracking-tight text-indigo-600">
+            다왔어
           </Text>
-          <Text style={{ color: '#6B7280', marginTop: 8, fontSize: 15 }}>
-            목적지 도착 알람 서비스
+          <Text className="text-sm text-gray-500 mt-2">
+            목적지에 다 왔을 때 알려드려요
           </Text>
         </View>
 
-        {/* 이메일 입력 */}
-        <View style={{ marginBottom: 12 }}>
-          <Text style={{ fontSize: 13, color: '#374151', marginBottom: 6, fontWeight: '500' }}>
-            이메일
-          </Text>
+        {/* 이메일 */}
+        <View className="mb-3">
+          <Text className="text-sm font-medium text-gray-700 mb-1.5">이메일</Text>
           <TextInput
             value={email}
             onChangeText={setEmail}
             placeholder="email@example.com"
+            placeholderTextColor="#9CA3AF"
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
-            style={{
-              borderWidth: 1,
-              borderColor: '#D1D5DB',
-              borderRadius: 10,
-              paddingHorizontal: 14,
-              paddingVertical: 12,
-              fontSize: 15,
-              color: '#111827',
-            }}
+            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
           />
         </View>
 
-        {/* 비밀번호 입력 */}
-        <View style={{ marginBottom: 24 }}>
-          <Text style={{ fontSize: 13, color: '#374151', marginBottom: 6, fontWeight: '500' }}>
-            비밀번호
-          </Text>
+        {/* 비밀번호 */}
+        <View className="mb-6">
+          <Text className="text-sm font-medium text-gray-700 mb-1.5">비밀번호</Text>
           <TextInput
             value={password}
             onChangeText={setPassword}
             placeholder="비밀번호 입력"
+            placeholderTextColor="#9CA3AF"
             secureTextEntry
             autoComplete="password"
-            style={{
-              borderWidth: 1,
-              borderColor: '#D1D5DB',
-              borderRadius: 10,
-              paddingHorizontal: 14,
-              paddingVertical: 12,
-              fontSize: 15,
-              color: '#111827',
-            }}
+            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
           />
         </View>
 
-        {/* 이메일 로그인 버튼 */}
+        {/* 로그인 버튼 */}
         <TouchableOpacity
           onPress={handleEmailLogin}
           disabled={loading}
-          style={{
-            backgroundColor: '#4F46E5',
-            borderRadius: 10,
-            paddingVertical: 14,
-            alignItems: 'center',
-            marginBottom: 12,
-            opacity: loading ? 0.6 : 1,
-          }}
+          className={`bg-indigo-600 rounded-full px-6 py-3 items-center mb-3 active:scale-95 ${loading ? 'opacity-60' : ''}`}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>
-              로그인
-            </Text>
+            <Text className="text-white font-semibold text-base">로그인</Text>
           )}
         </TouchableOpacity>
 
         {/* 구분선 */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 16 }}>
-          <View style={{ flex: 1, height: 1, backgroundColor: '#E5E7EB' }} />
-          <Text style={{ marginHorizontal: 12, color: '#9CA3AF', fontSize: 13 }}>또는</Text>
-          <View style={{ flex: 1, height: 1, backgroundColor: '#E5E7EB' }} />
+        <View className="flex-row items-center my-4">
+          <View className="flex-1 h-px bg-gray-200" />
+          <Text className="mx-3 text-sm text-gray-400">또는</Text>
+          <View className="flex-1 h-px bg-gray-200" />
         </View>
 
-        {/* 구글 로그인 버튼 */}
+        {/* 구글 로그인 */}
         <TouchableOpacity
           onPress={handleGoogleLogin}
           disabled={loading}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            borderRadius: 10,
-            paddingVertical: 14,
-            marginBottom: 24,
-            opacity: loading ? 0.6 : 1,
-          }}
+          className={`flex-row items-center justify-center border border-gray-300 rounded-full px-6 py-3 mb-6 active:scale-95 ${loading ? 'opacity-60' : ''}`}
         >
-          <Text style={{ fontSize: 18, marginRight: 8 }}>🅖</Text>
-          <Text style={{ color: '#374151', fontWeight: '600', fontSize: 16 }}>
-            Google로 계속하기
-          </Text>
+          <Text className="text-lg mr-2">G</Text>
+          <Text className="text-gray-700 font-semibold text-base">Google로 계속하기</Text>
         </TouchableOpacity>
 
         {/* 회원가입 링크 */}
-        <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-          <Text style={{ color: '#6B7280', fontSize: 14 }}>계정이 없으신가요? </Text>
+        <View className="flex-row justify-center">
+          <Text className="text-sm text-gray-500">계정이 없으신가요? </Text>
           <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
-            <Text style={{ color: '#4F46E5', fontWeight: '600', fontSize: 14 }}>
-              회원가입
-            </Text>
+            <Text className="text-sm font-semibold text-indigo-600">회원가입</Text>
           </TouchableOpacity>
         </View>
       </View>

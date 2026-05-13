@@ -12,7 +12,7 @@ export async function initNotifications() {
   // Android 알림 채널 생성
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(ALARM_CHANNEL_ID, {
-      name: 'WakePoint 알람',
+      name: '다왔어 알람',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#4F46E5',

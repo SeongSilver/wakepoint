@@ -1,6 +1,6 @@
 module.exports = {
   expo: {
-    name: 'WakePoint',
+    name: '다왔어',
     slug: 'wakepoint',
     scheme: 'wakepoint',
     version: '1.0.0',

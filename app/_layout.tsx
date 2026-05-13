@@ -3,7 +3,7 @@
 import '@/tasks/locationTask';
 
 import '../global.css';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Stack, router } from 'expo-router';
 import { initNotifications } from '@/lib/alarm';
 import { supabase } from '@/lib/supabase';
@@ -15,19 +15,27 @@ function TrackingSync() {
 }
 
 export default function RootLayout() {
-  const [ready, setReady] = useState(false);
-
   useEffect(() => {
     initNotifications();
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        router.replace('/(tabs)');
-      } else {
+    const timeout = setTimeout(() => {
+      router.replace('/(auth)/login');
+    }, 5000);
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        clearTimeout(timeout);
+        if (session) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/(auth)/login');
+        }
+      })
+      .catch(() => {
+        clearTimeout(timeout);
         router.replace('/(auth)/login');
-      }
-      setReady(true);
-    });
+      });
 
     const {
       data: { subscription },
@@ -39,15 +47,19 @@ export default function RootLayout() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
     <>
       <TrackingSync />
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(auth)/login" />
+        <Stack.Screen name="(auth)/signup" />
       </Stack>
     </>
   );
