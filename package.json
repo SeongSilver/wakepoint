@@ -11,6 +11,9 @@
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.1.2",
     "@react-native-community/slider": "5.0.1",
+    "@react-native-kakao/core": "^2.4.5",
+    "@react-native-kakao/share": "^2.4.5",
+    "@react-native-kakao/user": "^2.4.5",
     "@supabase/supabase-js": "^2.50.0",
     "date-fns": "^4.1.0",
     "expo": "~54.0.33",
@@ -21,7 +24,6 @@
     "expo-router": "~6.0.23",
     "expo-status-bar": "~3.0.9",
     "expo-task-manager": "~14.0.9",
-    "lightningcss-win32-x64-msvc": "^1.27.0",
     "nativewind": "^4.2.3",
     "react": "19.1.0",
     "react-native": "0.81.5",
