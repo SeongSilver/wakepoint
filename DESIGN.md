@@ -1,129 +1,311 @@
-# DESIGN.md — 다왔어 디자인 시스템
+# DESIGN SYSTEM
 
-## 서비스 정보
-- **앱 이름**: 다왔어
-- **슬로건**: 목적지에 다 왔을 때 울리는 알람
-- **톤**: 친근하고 실용적, 과하지 않게 깔끔
+> Apple-inspired design language. Photography-first, UI recedes. Single blue accent. Alternating light/dark tiles.
 
 ---
 
-## 컬러
+## Colors
 
+### Accent
+| Token | Hex | Use |
+|---|---|---|
+| `primary` | `#0066cc` | Every interactive element — links, CTAs, focus signals. The ONLY accent color. |
+| `primary-focus` | `#0071e3` | Keyboard focus ring on buttons (`outline: 2px solid`) |
+| `primary-on-dark` | `#2997ff` | Links on dark tiles only — Action Blue disappears on dark surfaces |
+
+### Surfaces
+| Token | Hex | Use |
+|---|---|---|
+| `canvas` | `#ffffff` | Dominant canvas — content, utility cards, store tiles |
+| `canvas-parchment` | `#f5f5f7` | Alternating light tiles, footer, page canvas |
+| `surface-pearl` | `#fafafc` | Secondary ghost button fill |
+| `surface-tile-1` | `#272729` | Primary dark tile |
+| `surface-tile-2` | `#2a2a2c` | Dark tile sitting above/below tile-1 (micro-step lighter) |
+| `surface-tile-3` | `#252527` | Bottom of stack, video frames (micro-step darker) |
+| `surface-black` | `#000000` | Global nav bar, video backgrounds only |
+| `surface-chip-translucent` | `rgba(210,210,215,0.64)` | Circular control chips over photography |
+
+### Text
+| Token | Hex | Use |
+|---|---|---|
+| `ink` | `#1d1d1f` | All headlines, body, dark utility button fill |
+| `body-on-dark` | `#ffffff` | All text on dark tiles |
+| `body-muted` | `#cccccc` | Secondary copy on dark tiles |
+| `ink-muted-80` | `#333333` | Body on Pearl Button surface |
+| `ink-muted-48` | `#7a7a7a` | Disabled button text, fine-print |
+
+### Borders
+| Token | Value | Use |
+|---|---|---|
+| `divider-soft` | `rgba(0,0,0,0.04)` | Secondary button ring |
+| `hairline` | `#e0e0e0` | Store utility cards, configurator chips |
+
+**Rules:**
+- `primary` (#0066cc) is the ONLY accent — never introduce a second color
+- `surface-black` appears only in global nav and video backgrounds
+- `primary-on-dark` (#2997ff) is for dark tiles only; never use on light surfaces
+
+---
+
+## Typography
+
+### Font Stack
+```css
+/* Display (≥19px) */
+font-family: SF Pro Display, system-ui, -apple-system, sans-serif;
+
+/* Body / UI */
+font-family: SF Pro Text, system-ui, -apple-system, sans-serif;
+
+/* Fallback (non-Apple) */
+font-family: Inter, system-ui, sans-serif;
+/* Inter: add letter-spacing: -0.01em on display sizes */
 ```
-Primary       #4F46E5   인디고 — 메인 액션 (버튼, 링크, 활성 아이콘)
-Primary Dark  #4338CA   Primary 눌렀을 때
-Success       #10B981   알람 활성 상태, 완료
-Warning       #F59E0B   반경 근접 경고
-Danger        #EF4444   알람 삭제, 오류
 
-Canvas        #FFFFFF   기본 배경
-Surface       #F5F5F7   카드/섹션 배경
-Border        #E5E7EB   구분선, 카드 테두리
+### Scale
+| Token | Size | Weight | Line Height | Letter Spacing | Use |
+|---|---|---|---|---|---|
+| `hero-display` | 56px | 600 | 1.07 | -0.28px | Hero headline |
+| `display-lg` | 40px | 600 | 1.10 | 0 | Product tile headlines |
+| `display-md` | 34px | 600 | 1.47 | -0.374px | Section heads |
+| `lead` | 28px | 400 | 1.14 | 0.196px | Product tile subcopy |
+| `lead-airy` | 24px | 300 | 1.5 | 0 | Airy lead paragraphs |
+| `tagline` | 21px | 600 | 1.19 | 0.231px | Sub-tile tagline, sub-nav name |
+| `body-strong` | 17px | 600 | 1.24 | -0.374px | Inline strong emphasis |
+| `body` | 17px | 400 | 1.47 | -0.374px | Default paragraph |
+| `dense-link` | 17px | 400 | 2.41 | 0 | Footer link lists |
+| `caption` | 14px | 400 | 1.43 | -0.224px | Captions, button text |
+| `caption-strong` | 14px | 600 | 1.29 | -0.224px | Emphasized captions |
+| `button-large` | 18px | 300 | 1.0 | 0 | Store hero CTAs |
+| `button-utility` | 14px | 400 | 1.29 | -0.224px | Utility/nav button labels |
+| `fine-print` | 12px | 400 | 1.0 | -0.12px | Footer body |
+| `micro-legal` | 10px | 400 | 1.3 | -0.08px | Legal disclaimers |
+| `nav-link` | 12px | 400 | 1.0 | -0.12px | Global nav items |
 
-Ink           #1D1D1F   제목, 본문
-Ink Muted     #6B7280   보조 텍스트, 플레이스홀더
-On Primary    #FFFFFF   Primary 위 텍스트
+**Rules:**
+- Weight ladder: **300 / 400 / 600 / 700** — weight 500 is deliberately absent
+- Negative letter-spacing only at 17px and above; never at 12px or below
+- Body copy is always **17px**, not 16px
+- Weight 300 is reserved for large airy moments (`lead-airy`, `button-large`) only
+- Headlines are weight **600**, not 700
+
+---
+
+## Spacing
+
+| Token | Value |
+|---|---|
+| `xxs` | 4px |
+| `xs` | 8px |
+| `sm` | 12px |
+| `md` | 17px |
+| `lg` | 24px |
+| `xl` | 32px |
+| `xxl` | 48px |
+| `section` | 80px |
+
+- **Base unit:** 8px — structural layout snaps to 8/12/16/20/24
+- **Tile vertical padding:** 80px (`section`)
+- **Card padding:** 24px (`lg`)
+- **Button padding:** 8–11px vertical × 15–22px horizontal
+- Tiles stack edge-to-edge with **0 gap** — color change is the divider
+
+---
+
+## Border Radius
+
+| Token | Value | Use |
+|---|---|---|
+| `none` | 0px | Full-bleed product tiles |
+| `xs` | 5px | Subtle inline chips (rare) |
+| `sm` | 8px | Dark utility buttons, inline card imagery |
+| `md` | 11px | Pearl Button capsules |
+| `lg` | 18px | Store/accessories grid cards |
+| `pill` | 9999px | Primary blue CTAs, configurator chips, search input |
+| `full` | 50% | Circular control chips over photography |
+
+**Rules:**
+- `pill` = "this is an action" signal — reserve for primary CTAs, chips, search
+- Full-bleed tiles are always `none` (rectangular, edge-to-edge)
+- Don't mix radius grammars — `sm` for compact utility, `lg` for cards, `pill` for actions
+
+---
+
+## Elevation & Shadow
+
+| Level | CSS | Use |
+|---|---|---|
+| Flat | none | Tiles, nav, footer, body sections |
+| Soft hairline | `1px solid rgba(0,0,0,0.08)` | Utility cards, sub-nav separator |
+| Backdrop blur | `backdrop-filter: saturate(180%) blur(20px)` | Sub-nav frosted glass, floating sticky bar |
+| **Product shadow** | `box-shadow: rgba(0,0,0,0.22) 3px 5px 30px 0` | Product renders on a surface — THE ONLY SHADOW |
+
+**Rules:**
+- Shadow is applied **only to product photography** — never to cards, buttons, or text
+- Elevation comes from surface-color change (light ↔ dark tile), not chrome
+- Never add decorative gradients — atmosphere comes from photography
+
+---
+
+## Components
+
+### Global Nav
+```
+Background:  #000000 (surface-black)
+Height:      44px
+Text:        nav-link (12px / 400 / -0.12px), #ffffff
+Right:       Search + Bag icons
+Collapse:    ≤834px → hamburger
+```
+
+### Sub-Nav (Frosted)
+```
+Background:  canvas-parchment 80% + backdrop-filter blur
+Height:      52px
+Left:        Product category — tagline (21px / 600)
+Right:       nav links (button-utility 14px) + button-primary CTA
+```
+
+### Buttons
+
+**button-primary** — Signature action
+```css
+background:    #0066cc;
+color:         #ffffff;
+font:          17px / 400 SF Pro Text;
+border-radius: 9999px;          /* pill */
+padding:       11px 22px;
+/* Active */ transform: scale(0.95);
+/* Focus  */ outline: 2px solid #0071e3;
+```
+
+**button-secondary-pill** — Ghost pill CTA
+```css
+background:    transparent;
+color:         #0066cc;
+border:        1px solid #0066cc;
+border-radius: 9999px;
+padding:       11px 22px;
+```
+
+**button-dark-utility** — Nav actions (Sign In, Bag)
+```css
+background:    #1d1d1f;
+color:         #ffffff;
+font:          14px / 400 / -0.224px;
+border-radius: 8px;             /* sm */
+padding:       8px 15px;
+/* Active */ transform: scale(0.95);
+```
+
+**button-pearl-capsule** — Card secondary
+```css
+background:    #fafafc;
+color:         #333333;
+border:        3px solid rgba(0,0,0,0.04);
+border-radius: 11px;            /* md */
+padding:       8px 14px;
+font:          14px / 400;
+```
+
+**button-icon-circular** — Floats over photography
+```css
+width:         44px;
+height:        44px;
+background:    rgba(210,210,215,0.64);
+border-radius: 50%;
+```
+
+### Product Tiles
+
+**Light tile**
+```
+Background:   #ffffff
+Text:         #1d1d1f
+Padding:      80px vertical
+Border-radius: 0 (edge-to-edge)
+Stack:        display-lg headline → lead tagline → 2× button-primary → product render
+```
+
+**Parchment tile** — Same as light, background `#f5f5f7`
+
+**Dark tile**
+```
+Background:   #272729
+Text:         #ffffff (links: #2997ff)
+Padding:      80px vertical
+Border-radius: 0
+```
+
+Alternate: **light → dark → light → dark** — color change IS the section divider.
+
+### Store Utility Card
+```css
+background:    #ffffff;
+border:        1px solid #e0e0e0;
+border-radius: 18px;            /* lg */
+padding:       24px;
+/* Image: 1:1 crop, border-radius: 8px inside */
+/* Name:  body-strong (17px / 600) */
+/* Price: body (17px / 400) */
+/* CTA:   text-link in #0066cc */
+```
+
+### Search Input
+```css
+background:    #ffffff;
+border:        1px solid rgba(0,0,0,0.08);
+border-radius: 9999px;          /* pill */
+padding:       12px 20px;
+height:        44px;
+font:          17px / 400;
+```
+
+### Floating Sticky Bar
+```css
+background:    rgba(245,245,247,0.80);   /* parchment 80% */
+backdrop-filter: saturate(180%) blur(20px);
+height:        64px;
+padding:       12px 32px;
+/* Left: price total — body (17px) */
+/* Right: button-primary */
 ```
 
 ---
 
-## 타이포그래피 (NativeWind 클래스)
+## Layout
 
+| Breakpoint | Width | Key changes |
+|---|---|---|
+| Wide desktop | ≥1441px | Content locked at 1440px |
+| Desktop | 1069–1440px | Full layout, 4–5 col grids |
+| Small desktop | 1024–1068px | 2/3 width tiles, hero h1 40px |
+| Tablet landscape | 834–1023px | Nav fully expanded, 2-col grids |
+| Tablet portrait | 736–833px | Nav → hamburger |
+| Large phone | 641–735px | Tile padding 48px |
+| Phone | 420–640px | Single column, hero 34px |
+| Small phone | ≤419px | Hero drops to 28px |
+
+**Utility grid columns:** 5 → 4 → 3 → 2 → 1 as breakpoints shrink
+
+**Hero typography collapse:**
 ```
-Hero      text-4xl font-semibold tracking-tight    — 앱 타이틀
-Title     text-2xl font-semibold                   — 화면 제목
-Section   text-lg font-semibold                    — 섹션 헤더
-Body      text-base font-normal                    — 본문 (16px)
-Caption   text-sm font-normal text-gray-500        — 보조 설명
-Micro     text-xs font-normal text-gray-400        — 태그, 배지
+56px (hero-display) → 40px (1068px) → 34px (640px) → 28px (419px)
 ```
+
+**Touch targets:** Minimum 44×44px on all interactive elements.
 
 ---
 
-## 컴포넌트
+## Rules Summary
 
-### 버튼
-```
-Primary   bg-indigo-600 text-white rounded-full px-6 py-3 active:scale-95
-Ghost     border border-indigo-600 text-indigo-600 rounded-full px-6 py-3
-Danger    bg-red-500 text-white rounded-full px-6 py-3
-```
-
-### 카드 (알람 아이템)
-```
-bg-white rounded-2xl p-4 border border-gray-100
-shadow: shadowColor:#000 shadowOffset:0,1 shadowOpacity:0.06 shadowRadius:8
-```
-
-### 입력 필드
-```
-bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base
-focus: border-indigo-500
-```
-
-### FAB (알람 추가 버튼)
-```
-bg-indigo-600 w-14 h-14 rounded-full
-position: absolute bottom-6 right-6
-shadow: shadowColor:#4F46E5 shadowOffset:0,4 shadowOpacity:0.3 shadowRadius:12
-```
-
-### 배지 (알람 반경 표시)
-```
-활성   bg-emerald-100 text-emerald-700 rounded-full px-2 py-0.5 text-xs
-비활성 bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 text-xs
-```
-
----
-
-## 아이콘
-- 라이브러리: `@expo/vector-icons` → Ionicons
-- 주요 아이콘:
-```
-location-sharp     — 목적지 핀
-alarm              — 알람
-people             — 친구
-checkmark-circle   — 완료
-trash              — 삭제
-add                — 추가
-walk               — 걷기 (빈 상태 일러스트 대체)
-```
-
----
-
-## 스페이싱 (8px 기준)
-```
-xs  4px    py-0.5 / px-1
-sm  8px    p-2
-md  16px   p-4
-lg  24px   p-6
-xl  32px   p-8
-section 48px  py-12
-```
-
----
-
-## 화면별 적용 가이드
-
-### 홈 (알람 목록)
-- 배경: `bg-gray-50`
-- 헤더: "다왔어" — `text-3xl font-semibold text-gray-900`
-- 알람 카드: 카드 컴포넌트 사용, 왼쪽에 컬러 인디케이터 (활성=인디고, 비활성=회색)
-- 빈 상태: Lottie 워킹 애니메이션 + "아직 알람이 없어요" caption 텍스트
-
-### 지도
-- 지도 위 검색바: 입력 필드 스타일 + `shadow-lg`
-- 반경 선택 칩: 배지 스타일 (선택 시 bg-indigo-600 text-white)
-- 저장 버튼: Primary 버튼, 하단 고정
-
-### 인증
-- 로고: "다왔어" hero 텍스트 + `text-indigo-600`
-- 서브타이틀: "목적지에 다 왔을 때 알려드려요" caption
-
----
-
-## 규칙
-- 그림자는 카드와 FAB에만 사용 (버튼/텍스트 금지)
-- 모서리: 버튼 `rounded-full` / 카드 `rounded-2xl` / 입력 `rounded-xl`
-- 애니메이션: 버튼 `active:scale-95` 통일
-- Primary 외 두 번째 강조색 사용 금지
+| ✅ Do | ❌ Don't |
+|---|---|
+| Single accent `#0066cc` for every interactive element | Introduce a second accent color |
+| Negative letter-spacing on headlines (17px+) | Use gradients as decorative backgrounds |
+| Body copy at 17px / 400 / lh 1.47 | Set body at 16px or weight 500 |
+| Alternate light ↔ dark tiles for section rhythm | Add shadows to cards, buttons, or text |
+| `pill` radius for primary CTAs only | Use pill radius on utility cards |
+| Product shadow only on product renders | Round full-bleed tiles |
+| `transform: scale(0.95)` on all button active states | Use `primary-on-dark` (#2997ff) on light surfaces |
+| Global nav stays `surface-black` (#000000) | Tighten body line-height below 1.47 |
