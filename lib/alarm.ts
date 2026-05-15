@@ -1,8 +1,6 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import Constants from 'expo-constants';
 import { Alarm } from '@/types';
-import { supabase } from '@/lib/supabase';
 import { formatDistance } from '@/lib/location';
 
 const ALARM_CHANNEL_ID = 'wakepoint-alarm';
@@ -15,7 +13,7 @@ export async function initNotifications() {
       name: '다왔어 알람',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#4F46E5',
+      lightColor: '#0066cc',
       sound: 'default',
     });
   }
@@ -44,20 +42,3 @@ export async function triggerAlarm(alarm: Alarm) {
   });
 }
 
-/** FCM 푸시 토큰 발급 후 Supabase에 저장 */
-export async function registerPushToken(userId: string) {
-  const { status } = await Notifications.requestPermissionsAsync();
-  if (status !== 'granted') return;
-
-  const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
-  if (!projectId) {
-    console.error('[registerPushToken] EAS projectId가 app.json에 설정되지 않았습니다.');
-    return;
-  }
-
-  const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-  await supabase
-    .from('user_profiles')
-    .update({ push_token: token })
-    .eq('id', userId);
-}
