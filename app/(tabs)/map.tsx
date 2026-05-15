@@ -11,17 +11,21 @@ import {
   Platform,
   Alert,
   ScrollView,
+  StatusBar,
 } from 'react-native';
 import MapView, { Marker, Circle, MapPressEvent, Region } from 'react-native-maps';
+import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useAlarmStore } from '@/store/alarmStore';
 import { useUserStore } from '@/store/userStore';
+import { useAlarmPermissions } from '@/hooks/useAlarmPermissions';
 import { validateRadius, formatDistance } from '@/lib/location';
 import { supabase } from '@/lib/supabase';
-import { Alarm } from '@/types';
+import { Alarm, UserProfile } from '@/types';
 
-// 반경 프리셋 (km 단위)
+const KAKAO_API_KEY = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY;
+
 const RADIUS_PRESETS = [
   { label: '300m', value: 0.3 },
   { label: '500m', value: 0.5 },
@@ -33,7 +37,7 @@ const RADIUS_PRESETS = [
   { label: '50km', value: 50 },
 ];
 
-const BOTTOM_PANEL_HEIGHT = 360;
+const BOTTOM_PANEL_HEIGHT = 520;
 const SEOUL_REGION: Region = {
   latitude: 37.5665,
   longitude: 126.978,
@@ -41,15 +45,28 @@ const SEOUL_REGION: Region = {
   longitudeDelta: 0.08,
 };
 
+const STATUS_BAR_H = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 44;
+const SEARCH_TOP = STATUS_BAR_H + 8;
+
 interface SelectedLocation {
   latitude: number;
   longitude: number;
   address: string;
 }
 
+interface KakaoPlace {
+  place_name: string;
+  road_address_name: string;
+  address_name: string;
+  x: string; // longitude
+  y: string; // latitude
+}
+
 export default function MapScreen() {
   const mapRef = useRef<MapView>(null);
   const panelAnim = useRef(new Animated.Value(0)).current;
+  const searchInputRef = useRef<TextInput>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [selected, setSelected] = useState<SelectedLocation | null>(null);
   const [radiusKm, setRadiusKm] = useState(0.5);
@@ -58,10 +75,18 @@ export default function MapScreen() {
   const [saving, setSaving] = useState(false);
   const [panelVisible, setPanelVisible] = useState(false);
 
+  const [searchText, setSearchText] = useState('');
+  const [searchResults, setSearchResults] = useState<KakaoPlace[]>([]);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const [isForFriend, setIsForFriend] = useState(false);
+  const [selectedFriend, setSelectedFriend] = useState<UserProfile | null>(null);
+
   const addAlarm = useAlarmStore((s) => s.addAlarm);
   const profile = useUserStore((s) => s.profile);
+  const { acceptedFriends, loadingAccepted, fetchAcceptedFriends } = useAlarmPermissions();
 
-  // 패널 열기/닫기 애니메이션
   const showPanel = useCallback(() => {
     setPanelVisible(true);
     Animated.spring(panelAnim, {
@@ -83,6 +108,8 @@ export default function MapScreen() {
       setSelected(null);
       setLabel('');
       setRadiusKm(0.5);
+      setIsForFriend(false);
+      setSelectedFriend(null);
     });
   }, [panelAnim]);
 
@@ -91,17 +118,75 @@ export default function MapScreen() {
     outputRange: [BOTTOM_PANEL_HEIGHT, 0],
   });
 
-  // 지도 탭 → 역지오코딩 + 패널 표시
+  const searchKakao = useCallback((query: string) => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    searchDebounceRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(
+          `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&size=7`,
+          { headers: { Authorization: `KakaoAK ${KAKAO_API_KEY}` } }
+        );
+        const data = await res.json();
+        setSearchResults((data.documents as KakaoPlace[]) ?? []);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+  }, []);
+
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchText(text);
+    searchKakao(text);
+  }, [searchKakao]);
+
+  const clearSearch = useCallback(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    setSearchText('');
+    setSearchResults([]);
+    setIsSearchFocused(false);
+    setIsSearching(false);
+    Keyboard.dismiss();
+  }, []);
+
+  const handleSelectPlace = useCallback((place: KakaoPlace) => {
+    const latitude = parseFloat(place.y);
+    const longitude = parseFloat(place.x);
+    const roadAddr = place.road_address_name || place.address_name;
+    const address = place.place_name ? `${place.place_name}, ${roadAddr}` : roadAddr;
+
+    clearSearch();
+
+    setSelected({ latitude, longitude, address });
+    showPanel();
+
+    mapRef.current?.animateToRegion(
+      { latitude: latitude - 0.018, longitude, latitudeDelta: 0.06, longitudeDelta: 0.06 },
+      400
+    );
+  }, [showPanel, clearSearch]);
+
   const handleMapPress = useCallback(async (e: MapPressEvent) => {
+    if (isSearchFocused) {
+      clearSearch();
+      return;
+    }
+
     const { latitude, longitude } = e.nativeEvent.coordinate;
     Keyboard.dismiss();
 
     setGeocoding(true);
-    // 즉시 좌표로 패널 표시 (주소는 비동기 업데이트)
     setSelected({ latitude, longitude, address: '주소 불러오는 중...' });
     showPanel();
 
-    // 선택 위치 중심으로 지도 이동
     mapRef.current?.animateToRegion(
       { latitude: latitude - 0.018, longitude, latitudeDelta: 0.06, longitudeDelta: 0.06 },
       400
@@ -121,9 +206,8 @@ export default function MapScreen() {
     } finally {
       setGeocoding(false);
     }
-  }, [showPanel]);
+  }, [showPanel, isSearchFocused, clearSearch]);
 
-  // 현재 위치로 이동
   const handleMyLocation = useCallback(async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -143,12 +227,16 @@ export default function MapScreen() {
     }
   }, []);
 
-  // 알람 저장
   const handleSave = useCallback(async () => {
     if (!selected) return;
 
     if (!validateRadius(radiusKm)) {
       Alert.alert('반경 오류', '반경은 100m ~ 50km 사이여야 합니다.');
+      return;
+    }
+
+    if (isForFriend && !selectedFriend) {
+      Alert.alert('친구 선택', '알람을 받을 친구를 선택해주세요.');
       return;
     }
 
@@ -158,13 +246,13 @@ export default function MapScreen() {
     setSaving(true);
     try {
       const userId = profile?.id ?? 'local';
+      const ownerId = isForFriend && selectedFriend ? selectedFriend.id : userId;
 
-      // Supabase에 저장 (로그인 시)
       if (profile?.id) {
         const { data, error } = await supabase
           .from('alarms')
           .insert({
-            owner_id: userId,
+            owner_id: ownerId,
             created_by: userId,
             label: alarmLabel,
             target_lat: selected.latitude,
@@ -177,9 +265,12 @@ export default function MapScreen() {
           .single();
 
         if (error) throw error;
-        addAlarm(data as Alarm);
+
+        // 내 알람만 로컬 스토어에 추가 (친구 알람은 친구 기기의 Realtime으로 수신)
+        if (!isForFriend) {
+          addAlarm(data as Alarm);
+        }
       } else {
-        // 비로그인: 로컬 스토어에만 저장
         const localAlarm: Alarm = {
           id: `local-${Date.now()}`,
           owner_id: 'local',
@@ -196,9 +287,12 @@ export default function MapScreen() {
       }
 
       hidePanel();
-      Alert.alert(
-        '알람 설정 완료',
-        `"${alarmLabel}" 알람이 설정되었습니다.\n목적지 반경 ${formatDistance(radiusKm)} 이내 진입 시 알림을 드립니다.`,
+
+      const successBody = isForFriend && selectedFriend
+        ? `"${alarmLabel}" 알람을 ${selectedFriend.nickname}님을 위해 설정했습니다.\n목적지 반경 ${formatDistance(radiusKm)} 이내 진입 시 알림을 드립니다.`
+        : `"${alarmLabel}" 알람이 설정되었습니다.\n목적지 반경 ${formatDistance(radiusKm)} 이내 진입 시 알림을 드립니다.`;
+
+      Alert.alert('알람 설정 완료', successBody,
         [{ text: '확인', onPress: () => router.push('/(tabs)') }]
       );
     } catch (err) {
@@ -207,10 +301,12 @@ export default function MapScreen() {
     } finally {
       setSaving(false);
     }
-  }, [selected, radiusKm, label, profile, addAlarm, hidePanel]);
+  }, [selected, radiusKm, label, profile, addAlarm, hidePanel, isForFriend, selectedFriend]);
+
+  const showDropdown = isSearchFocused && searchText.trim().length > 0;
 
   return (
-    <View style={{ flex: 1 }}>
+    <View className="flex-1">
       {/* 지도 */}
       <MapView
         ref={mapRef}
@@ -225,33 +321,109 @@ export default function MapScreen() {
           <>
             <Marker
               coordinate={{ latitude: selected.latitude, longitude: selected.longitude }}
-              pinColor="#4F46E5"
+              pinColor="#0066cc"
             />
             <Circle
               center={{ latitude: selected.latitude, longitude: selected.longitude }}
               radius={radiusKm * 1000}
-              strokeColor="#4F46E5"
+              strokeColor="#0066cc"
               strokeWidth={2}
-              fillColor="rgba(79, 70, 229, 0.12)"
+              fillColor="rgba(0, 102, 204, 0.12)"
             />
           </>
         )}
       </MapView>
 
-      {/* 탭 안내 (핀 없을 때) */}
-      {!panelVisible && (
+      {/* 검색창 */}
+      <View className="absolute left-3 right-3" style={{ top: SEARCH_TOP }}>
+        {/* 검색 입력 */}
         <View
+          className="flex-row items-center bg-white rounded-full px-4"
           style={{
-            position: 'absolute',
-            top: 60,
-            alignSelf: 'center',
-            backgroundColor: 'rgba(17,24,39,0.78)',
-            paddingHorizontal: 18,
-            paddingVertical: 10,
-            borderRadius: 24,
+            height: 44,
+            borderWidth: 1,
+            borderColor: 'rgba(0,0,0,0.08)',
+            elevation: 4,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.12,
+            shadowRadius: 8,
           }}
         >
-          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '500' }}>
+          <Ionicons name="search" size={18} color="#7a7a7a" style={{ marginRight: 8 }} />
+          <TextInput
+            ref={searchInputRef}
+            value={searchText}
+            onChangeText={handleSearchChange}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+            placeholder="장소 검색"
+            placeholderTextColor="#7a7a7a"
+            returnKeyType="search"
+            className="flex-1 text-[17px] text-ink"
+            style={{ paddingVertical: 0 }}
+          />
+          {isSearching && (
+            <ActivityIndicator size="small" color="#0066cc" style={{ marginLeft: 6 }} />
+          )}
+          {searchText.length > 0 && !isSearching && (
+            <TouchableOpacity onPress={clearSearch} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="close-circle" size={18} color="#7a7a7a" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* 검색 결과 드롭다운 */}
+        {showDropdown && (
+          <View
+            className="mt-2 bg-white overflow-hidden"
+            style={{
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: '#e0e0e0',
+              elevation: 8,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.12,
+              shadowRadius: 12,
+            }}
+          >
+            {searchResults.length === 0 && !isSearching ? (
+              <View className="py-4 items-center">
+                <Text className="text-sm text-ink-muted">검색 결과가 없습니다</Text>
+              </View>
+            ) : (
+              searchResults.map((place, index) => (
+                <TouchableOpacity
+                  key={`${place.place_name}-${index}`}
+                  onPress={() => handleSelectPlace(place)}
+                  className="px-4 py-3 active:bg-parchment"
+                  style={
+                    index < searchResults.length - 1
+                      ? { borderBottomWidth: 1, borderBottomColor: '#e0e0e0' }
+                      : undefined
+                  }
+                >
+                  <Text className="text-[15px] font-medium text-ink" numberOfLines={1}>
+                    {place.place_name}
+                  </Text>
+                  <Text className="text-[13px] text-ink-muted mt-0.5" numberOfLines={1}>
+                    {place.road_address_name || place.address_name}
+                  </Text>
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
+        )}
+      </View>
+
+      {/* 탭 안내 */}
+      {!panelVisible && !isSearchFocused && (
+        <View
+          className="absolute self-center bg-tile-dark px-5 py-2.5 rounded-full"
+          style={{ top: SEARCH_TOP + 52 }}
+        >
+          <Text className="text-white text-sm font-medium">
             📍 지도를 탭해서 목적지를 설정하세요
           </Text>
         </View>
@@ -260,38 +432,25 @@ export default function MapScreen() {
       {/* 내 위치 버튼 */}
       <TouchableOpacity
         onPress={handleMyLocation}
+        className="absolute right-4 w-11 h-11 rounded-full items-center justify-center"
         style={{
-          position: 'absolute',
-          top: 116,
-          right: 16,
-          width: 44,
-          height: 44,
-          backgroundColor: '#fff',
-          borderRadius: 22,
-          alignItems: 'center',
-          justifyContent: 'center',
-          elevation: 4,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.18,
-          shadowRadius: 4,
+          top: SEARCH_TOP + 52,
+          backgroundColor: 'rgba(210,210,215,0.64)',
         }}
       >
-        <Text style={{ fontSize: 20 }}>◎</Text>
+        <Ionicons name="navigate" size={20} color="#0066cc" />
       </TouchableOpacity>
 
       {/* 바텀 패널 */}
       {panelVisible && (
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
+          className="absolute bottom-0 left-0 right-0"
         >
           <Animated.View
+            className="bg-canvas rounded-t-3xl"
             style={{
               transform: [{ translateY: panelTranslateY }],
-              backgroundColor: '#fff',
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
               elevation: 16,
               shadowColor: '#000',
               shadowOffset: { width: 0, height: -4 },
@@ -300,8 +459,8 @@ export default function MapScreen() {
             }}
           >
             {/* 드래그 핸들 */}
-            <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 4 }}>
-              <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB' }} />
+            <View className="items-center pt-3 pb-1">
+              <View className="w-10 h-1 rounded-full bg-hairline" />
             </View>
 
             <ScrollView
@@ -309,24 +468,97 @@ export default function MapScreen() {
               contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
             >
               {/* 헤더 */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, marginTop: 4 }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>
-                  알람 설정
-                </Text>
-                <TouchableOpacity onPress={hidePanel} style={{ padding: 4 }}>
-                  <Text style={{ fontSize: 20, color: '#9CA3AF' }}>✕</Text>
+              <View className="flex-row items-center justify-between mb-4 mt-1">
+                <Text className="text-lg font-semibold text-ink">알람 설정</Text>
+                <TouchableOpacity onPress={hidePanel} className="p-1">
+                  <Ionicons name="close" size={22} color="#7a7a7a" />
                 </TouchableOpacity>
               </View>
 
+              {/* 누구를 위한 알람인지 선택 (로그인 시만 표시) */}
+              {profile && (
+                <View className="mb-4">
+                  <View className="flex-row bg-parchment rounded-full p-1">
+                    <TouchableOpacity
+                      onPress={() => { setIsForFriend(false); setSelectedFriend(null); }}
+                      className={`flex-1 py-2 rounded-full items-center ${!isForFriend ? 'bg-canvas' : ''}`}
+                      style={!isForFriend ? { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 } : undefined}
+                    >
+                      <Text className={`text-[14px] font-medium ${!isForFriend ? 'text-ink' : 'text-ink-muted'}`}>
+                        내 알람
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setIsForFriend(true);
+                        setSelectedFriend(null);
+                        fetchAcceptedFriends();
+                      }}
+                      className={`flex-1 py-2 rounded-full items-center ${isForFriend ? 'bg-canvas' : ''}`}
+                      style={isForFriend ? { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 } : undefined}
+                    >
+                      <Text className={`text-[14px] font-medium ${isForFriend ? 'text-ink' : 'text-ink-muted'}`}>
+                        친구 알람
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* 친구 선택 목록 */}
+                  {isForFriend && (
+                    <View className="mt-3">
+                      {loadingAccepted ? (
+                        <View className="py-4 items-center">
+                          <ActivityIndicator color="#0066cc" />
+                        </View>
+                      ) : acceptedFriends.length === 0 ? (
+                        <View className="bg-parchment border border-hairline rounded-[18px] p-4">
+                          <Text className="text-[13px] text-ink-muted text-center leading-5">
+                            알람 권한을 수락한 친구가 없습니다{'\n'}친구 화면에서 먼저 권한을 요청하세요
+                          </Text>
+                        </View>
+                      ) : (
+                        <View className="bg-parchment border border-hairline rounded-[18px] overflow-hidden">
+                          {acceptedFriends.map((friend, index) => (
+                            <TouchableOpacity
+                              key={friend.profile.id}
+                              onPress={() => setSelectedFriend(friend.profile)}
+                              className="flex-row items-center px-4 py-3 active:bg-hairline"
+                              style={index < acceptedFriends.length - 1 ? { borderBottomWidth: 1, borderBottomColor: '#e0e0e0' } : undefined}
+                            >
+                              <View className="w-8 h-8 rounded-full bg-canvas border border-hairline items-center justify-center mr-3">
+                                <Text className="text-[13px] font-semibold text-primary">
+                                  {friend.profile.nickname.charAt(0).toUpperCase()}
+                                </Text>
+                              </View>
+                              <Text className="text-[15px] text-ink flex-1" numberOfLines={1}>
+                                {friend.profile.nickname}
+                              </Text>
+                              {selectedFriend?.id === friend.profile.id && (
+                                <Ionicons name="checkmark-circle" size={20} color="#0066cc" />
+                              )}
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              )}
+
               {/* 주소 */}
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#F3F4F6', borderRadius: 12, padding: 12, marginBottom: 16 }}>
-                <Text style={{ fontSize: 18, marginRight: 8 }}>📍</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 11, color: '#6B7280', marginBottom: 2 }}>목적지</Text>
+              <View className="flex-row items-start bg-parchment rounded-[18px] p-3 mb-4">
+                <Ionicons
+                  name="location-sharp"
+                  size={18}
+                  color="#0066cc"
+                  style={{ marginRight: 8, marginTop: 2 }}
+                />
+                <View className="flex-1">
+                  <Text className="text-xs text-ink-muted mb-0.5">목적지</Text>
                   {geocoding ? (
-                    <ActivityIndicator size="small" color="#4F46E5" />
+                    <ActivityIndicator size="small" color="#0066cc" />
                   ) : (
-                    <Text style={{ fontSize: 14, color: '#111827', fontWeight: '500' }} numberOfLines={2}>
+                    <Text className="text-sm text-ink font-medium" numberOfLines={2}>
                       {selected?.address}
                     </Text>
                   )}
@@ -334,61 +566,40 @@ export default function MapScreen() {
               </View>
 
               {/* 알람 이름 */}
-              <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
-                  알람 이름 <Text style={{ fontWeight: '400', color: '#9CA3AF' }}>(선택)</Text>
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-ink mb-2">
+                  알람 이름{' '}
+                  <Text className="font-normal text-ink-muted">(선택)</Text>
                 </Text>
                 <TextInput
                   value={label}
                   onChangeText={setLabel}
                   placeholder="예: 회사, 집, 강남역"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor="#7a7a7a"
                   returnKeyType="done"
                   onSubmitEditing={Keyboard.dismiss}
-                  style={{
-                    borderWidth: 1,
-                    borderColor: '#E5E7EB',
-                    borderRadius: 10,
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    fontSize: 15,
-                    color: '#111827',
-                    backgroundColor: '#fff',
-                  }}
+                  className="bg-parchment border border-hairline rounded-[18px] px-4 py-3 text-[17px] text-ink"
                 />
               </View>
 
               {/* 반경 선택 */}
-              <View style={{ marginBottom: 20 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151' }}>
-                    알람 반경
-                  </Text>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#4F46E5' }}>
-                    {formatDistance(radiusKm)}
-                  </Text>
+              <View className="mb-5">
+                <View className="flex-row justify-between mb-2.5">
+                  <Text className="text-sm font-semibold text-ink">알람 반경</Text>
+                  <Text className="text-sm font-semibold text-primary">{formatDistance(radiusKm)}</Text>
                 </View>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                <View className="flex-row flex-wrap gap-2">
                   {RADIUS_PRESETS.map((preset) => {
                     const active = radiusKm === preset.value;
                     return (
                       <TouchableOpacity
                         key={preset.value}
                         onPress={() => setRadiusKm(preset.value)}
-                        style={{
-                          paddingHorizontal: 14,
-                          paddingVertical: 7,
-                          borderRadius: 20,
-                          borderWidth: active ? 0 : 1,
-                          borderColor: '#E5E7EB',
-                          backgroundColor: active ? '#4F46E5' : '#F9FAFB',
-                        }}
+                        className={`px-3.5 py-1.5 rounded-full active:scale-95 ${
+                          active ? 'bg-primary' : 'bg-parchment border border-hairline'
+                        }`}
                       >
-                        <Text style={{
-                          fontSize: 13,
-                          fontWeight: active ? '600' : '400',
-                          color: active ? '#fff' : '#6B7280',
-                        }}>
+                        <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-ink-muted'}`}>
                           {preset.label}
                         </Text>
                       </TouchableOpacity>
@@ -400,20 +611,15 @@ export default function MapScreen() {
               {/* 저장 버튼 */}
               <TouchableOpacity
                 onPress={handleSave}
-                disabled={saving || geocoding}
-                style={{
-                  backgroundColor: saving || geocoding ? '#A5B4FC' : '#4F46E5',
-                  borderRadius: 9999,
-                  paddingVertical: 14,
-                  alignItems: 'center',
-                }}
+                disabled={saving || geocoding || (isForFriend && !selectedFriend)}
+                className={`rounded-full py-3.5 items-center active:scale-95 ${
+                  saving || geocoding || (isForFriend && !selectedFriend) ? 'bg-primary/50' : 'bg-primary'
+                }`}
               >
                 {saving ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
-                    알람 저장하기
-                  </Text>
+                  <Text className="text-white text-[17px] font-semibold">알람 저장하기</Text>
                 )}
               </TouchableOpacity>
             </ScrollView>
