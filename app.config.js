@@ -2,16 +2,16 @@ module.exports = {
   expo: {
     name: '다왔어',
     slug: 'wakepoint',
-    scheme: 'wakepoint',
+    scheme: ['dawasseo', 'wakepoint'],
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/icon.png',
+    icon: './assets/images/logo-icon.png',
     userInterfaceStyle: 'light',
     newArchEnabled: true,
     splash: {
-      image: './assets/splash-icon.png',
+      image: './assets/images/logo-vertical.png',
       resizeMode: 'contain',
-      backgroundColor: '#4F46E5',
+      backgroundColor: '#ffffff',
     },
     ios: {
       supportsTablet: true,
@@ -28,8 +28,8 @@ module.exports = {
     android: {
       package: 'com.yourname.wakepoint',
       adaptiveIcon: {
-        foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#4F46E5',
+        foregroundImage: './assets/images/logo-icon.png',
+        backgroundColor: '#ffffff',
       },
       edgeToEdgeEnabled: true,
       permissions: [
@@ -41,13 +41,12 @@ module.exports = {
       ],
       config: {
         googleMaps: {
-          // .env의 EXPO_PUBLIC_GOOGLE_MAPS_API_KEY 값이 빌드 시 주입됨
           apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
         },
       },
     },
     web: {
-      favicon: './assets/favicon.png',
+      favicon: './assets/images/favicon.ico',
     },
     plugins: [
       'expo-router',
@@ -61,14 +60,28 @@ module.exports = {
       [
         'expo-notifications',
         {
-          color: '#4F46E5',
+          color: '#0066cc',
+        },
+      ],
+      [
+        '@react-native-kakao/core',
+        {
+          nativeAppKey: process.env.EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY,
+          android: {
+            authCodeHandlerActivity: true,
+            extraMavenRepos: [
+              'https://devrepo.kakao.com/nexus/content/groups/public/',
+            ],
+          },
+          ios: {
+            handleKakaoOpenUrl: true,
+          },
         },
       ],
     ],
     extra: {
       eas: {
-        // eas build:configure 실행 시 자동으로 실제 ID로 교체됨
-        projectId: process.env.EAS_PROJECT_ID,
+        projectId: 'cd812aa7-22b5-44c5-ad17-fbc7c9df77d6',
       },
     },
   },
