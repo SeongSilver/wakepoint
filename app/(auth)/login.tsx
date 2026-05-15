@@ -8,15 +8,20 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
+import { login, isKakaoTalkLoginAvailable } from '@react-native-kakao/user';
 import { supabase } from '@/lib/supabase';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [kakaoLoading, setKakaoLoading] = useState(false);
+
+  const anyLoading = loading || kakaoLoading;
 
   const handleEmailLogin = async () => {
     if (!email || !password) {
@@ -53,86 +58,133 @@ export default function LoginScreen() {
     }
   };
 
+  const handleKakaoLogin = async () => {
+    setKakaoLoading(true);
+    try {
+      // KakaoTalk 미설치 시 카카오 계정 웹 로그인으로 fallback
+      const talkAvailable = await isKakaoTalkLoginAvailable();
+      const token = await login({ useKakaoAccountLogin: !talkAvailable });
+
+      if (!token.idToken) {
+        Alert.alert(
+          '설정 오류',
+          '카카오 OpenID Connect가 비활성화 상태입니다.\n카카오 개발자 콘솔 → 앱 → 카카오 로그인 → OpenID Connect를 활성화해주세요.'
+        );
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'kakao',
+        token: token.idToken,
+      });
+
+      if (error) throw error;
+      router.replace('/(tabs)');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '카카오 로그인에 실패했습니다.';
+      Alert.alert('로그인 실패', message);
+    } finally {
+      setKakaoLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white"
+      className="flex-1 bg-canvas"
     >
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
       <View className="flex-1 justify-center px-6">
         {/* 로고 */}
         <View className="items-center mb-12">
-          <Text className="text-4xl font-semibold tracking-tight text-indigo-600">
+          <Text className="text-4xl font-semibold tracking-tight text-primary">
             다왔어
           </Text>
-          <Text className="text-sm text-gray-500 mt-2">
+          <Text className="text-sm text-ink-muted mt-2">
             목적지에 다 왔을 때 알려드려요
           </Text>
         </View>
 
         {/* 이메일 */}
         <View className="mb-3">
-          <Text className="text-sm font-medium text-gray-700 mb-1.5">이메일</Text>
+          <Text className="text-sm font-medium text-ink mb-1.5">이메일</Text>
           <TextInput
             value={email}
             onChangeText={setEmail}
             placeholder="email@example.com"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#7a7a7a"
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
-            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            className="bg-parchment border border-hairline rounded-[18px] px-4 py-3 text-[17px] text-ink"
           />
         </View>
 
         {/* 비밀번호 */}
         <View className="mb-6">
-          <Text className="text-sm font-medium text-gray-700 mb-1.5">비밀번호</Text>
+          <Text className="text-sm font-medium text-ink mb-1.5">비밀번호</Text>
           <TextInput
             value={password}
             onChangeText={setPassword}
             placeholder="비밀번호 입력"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#7a7a7a"
             secureTextEntry
             autoComplete="password"
-            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            className="bg-parchment border border-hairline rounded-[18px] px-4 py-3 text-[17px] text-ink"
           />
         </View>
 
-        {/* 로그인 버튼 */}
+        {/* 이메일 로그인 버튼 */}
         <TouchableOpacity
           onPress={handleEmailLogin}
-          disabled={loading}
-          className={`bg-indigo-600 rounded-full px-6 py-3 items-center mb-3 active:scale-95 ${loading ? 'opacity-60' : ''}`}
+          disabled={anyLoading}
+          className={`bg-primary rounded-full px-6 py-3.5 items-center mb-3 active:scale-95 ${anyLoading ? 'opacity-60' : ''}`}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text className="text-white font-semibold text-base">로그인</Text>
+            <Text className="text-white font-semibold text-[17px]">로그인</Text>
           )}
         </TouchableOpacity>
 
         {/* 구분선 */}
         <View className="flex-row items-center my-4">
-          <View className="flex-1 h-px bg-gray-200" />
-          <Text className="mx-3 text-sm text-gray-400">또는</Text>
-          <View className="flex-1 h-px bg-gray-200" />
+          <View className="flex-1 h-px bg-hairline" />
+          <Text className="mx-3 text-sm text-ink-muted">또는</Text>
+          <View className="flex-1 h-px bg-hairline" />
         </View>
 
         {/* 구글 로그인 */}
         <TouchableOpacity
           onPress={handleGoogleLogin}
-          disabled={loading}
-          className={`flex-row items-center justify-center border border-gray-300 rounded-full px-6 py-3 mb-6 active:scale-95 ${loading ? 'opacity-60' : ''}`}
+          disabled={anyLoading}
+          className={`flex-row items-center justify-center border border-hairline rounded-full px-6 py-3.5 mb-3 active:scale-95 ${anyLoading ? 'opacity-60' : ''}`}
         >
           <Text className="text-lg mr-2">G</Text>
-          <Text className="text-gray-700 font-semibold text-base">Google로 계속하기</Text>
+          <Text className="text-ink font-semibold text-[17px]">Google로 계속하기</Text>
+        </TouchableOpacity>
+
+        {/* 카카오 로그인 */}
+        <TouchableOpacity
+          onPress={handleKakaoLogin}
+          disabled={anyLoading}
+          className={`flex-row items-center justify-center bg-kakao rounded-full px-6 py-3.5 mb-8 active:scale-95 ${anyLoading ? 'opacity-60' : ''}`}
+        >
+          {kakaoLoading ? (
+            <ActivityIndicator color="#000000" />
+          ) : (
+            <>
+              <Text className="text-lg mr-2">💬</Text>
+              <Text className="text-black font-semibold text-[17px]">카카오로 계속하기</Text>
+            </>
+          )}
         </TouchableOpacity>
 
         {/* 회원가입 링크 */}
         <View className="flex-row justify-center">
-          <Text className="text-sm text-gray-500">계정이 없으신가요? </Text>
+          <Text className="text-sm text-ink-muted">계정이 없으신가요? </Text>
           <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
-            <Text className="text-sm font-semibold text-indigo-600">회원가입</Text>
+            <Text className="text-sm font-semibold text-primary">회원가입</Text>
           </TouchableOpacity>
         </View>
       </View>
