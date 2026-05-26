@@ -4,6 +4,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   Animated,
   Keyboard,
@@ -13,6 +14,7 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
+import { useRecording } from '@/hooks/useRecording';
 import MapView, { Marker, Circle, MapPressEvent, Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -22,6 +24,7 @@ import { useUserStore } from '@/store/userStore';
 import { useAlarmPermissions } from '@/hooks/useAlarmPermissions';
 import { validateRadius, formatDistance } from '@/lib/location';
 import { supabase } from '@/lib/supabase';
+import { sendFcmToUser } from '@/lib/firebase';
 import { Alarm, UserProfile } from '@/types';
 
 const KAKAO_API_KEY = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY;
@@ -37,7 +40,7 @@ const RADIUS_PRESETS = [
   { label: '50km', value: 50 },
 ];
 
-const BOTTOM_PANEL_HEIGHT = 520;
+const BOTTOM_PANEL_HEIGHT = 720;
 const SEOUL_REGION: Region = {
   latitude: 37.5665,
   longitude: 126.978,
@@ -82,6 +85,19 @@ export default function MapScreen() {
 
   const [isForFriend, setIsForFriend] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<UserProfile | null>(null);
+  const [soundType, setSoundType] = useState<'default' | 'custom'>('default');
+
+  const {
+    isRecording,
+    recordingUri,
+    isPlaying,
+    durationSec,
+    startRecording,
+    stopRecording,
+    playPreview,
+    uploadRecording,
+    clearRecording,
+  } = useRecording();
 
   const addAlarm = useAlarmStore((s) => s.addAlarm);
   const profile = useUserStore((s) => s.profile);
@@ -110,8 +126,10 @@ export default function MapScreen() {
       setRadiusKm(0.5);
       setIsForFriend(false);
       setSelectedFriend(null);
+      setSoundType('default');
+      clearRecording();
     });
-  }, [panelAnim]);
+  }, [panelAnim, clearRecording]);
 
   const panelTranslateY = panelAnim.interpolate({
     inputRange: [0, 1],
@@ -244,6 +262,16 @@ export default function MapScreen() {
     const now = new Date().toISOString();
 
     setSaving(true);
+    let uploadedSoundUri: string | undefined;
+    if (soundType === 'custom' && recordingUri && profile?.id) {
+      uploadedSoundUri = (await uploadRecording(profile.id)) ?? undefined;
+      if (!uploadedSoundUri) {
+        Alert.alert('업로드 실패', '녹음 파일 업로드에 실패했습니다. 다시 시도해주세요.');
+        setSaving(false);
+        return;
+      }
+    }
+
     try {
       const userId = profile?.id ?? 'local';
       const ownerId = isForFriend && selectedFriend ? selectedFriend.id : userId;
@@ -260,6 +288,8 @@ export default function MapScreen() {
             target_address: selected.address,
             radius_km: radiusKm,
             is_active: true,
+            sound_type: soundType,
+            sound_uri: uploadedSoundUri ?? null,
           })
           .select()
           .single();
@@ -269,6 +299,11 @@ export default function MapScreen() {
         // 내 알람만 로컬 스토어에 추가 (친구 알람은 친구 기기의 Realtime으로 수신)
         if (!isForFriend) {
           addAlarm(data as Alarm);
+        } else if (selectedFriend?.push_token && profile?.nickname) {
+          sendFcmToUser(selectedFriend.push_token, {
+            title: '알람이 설정됐어요 📍',
+            body: `${profile.nickname}님이 알람을 설정해줬어요`,
+          }).catch(() => {});
         }
       } else {
         const localAlarm: Alarm = {
@@ -282,6 +317,8 @@ export default function MapScreen() {
           radius_km: radiusKm,
           is_active: true,
           created_at: now,
+          sound_type: soundType,
+          sound_uri: uploadedSoundUri,
         };
         addAlarm(localAlarm);
       }
@@ -301,7 +338,7 @@ export default function MapScreen() {
     } finally {
       setSaving(false);
     }
-  }, [selected, radiusKm, label, profile, addAlarm, hidePanel, isForFriend, selectedFriend]);
+  }, [selected, radiusKm, label, profile, addAlarm, hidePanel, isForFriend, selectedFriend, soundType, recordingUri, uploadRecording]);
 
   const showDropdown = isSearchFocused && searchText.trim().length > 0;
 
@@ -608,12 +645,98 @@ export default function MapScreen() {
                 </View>
               </View>
 
+              {/* 알람음 설정 */}
+              <View className="mb-5">
+                <Text className="text-sm font-semibold text-ink mb-2">알람음</Text>
+                <View className="flex-row bg-parchment rounded-full p-1 mb-3">
+                  <TouchableOpacity
+                    onPress={() => { setSoundType('default'); clearRecording(); }}
+                    className={`flex-1 py-2 rounded-full items-center ${soundType === 'default' ? 'bg-canvas' : ''}`}
+                    style={soundType === 'default' ? { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 } : undefined}
+                  >
+                    <Text className={`text-[14px] font-medium ${soundType === 'default' ? 'text-ink' : 'text-ink-muted'}`}>
+                      기본 알람음
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setSoundType('custom')}
+                    className={`flex-1 py-2 rounded-full items-center ${soundType === 'custom' ? 'bg-canvas' : ''}`}
+                    style={soundType === 'custom' ? { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 } : undefined}
+                  >
+                    <Text className={`text-[14px] font-medium ${soundType === 'custom' ? 'text-ink' : 'text-ink-muted'}`}>
+                      내 목소리로 녹음
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {soundType === 'custom' && (
+                  <View className="bg-parchment border border-hairline rounded-[18px] p-4">
+                    {!recordingUri ? (
+                      <View className="items-center">
+                        <Pressable
+                          onPressIn={startRecording}
+                          onPressOut={stopRecording}
+                          style={({ pressed }) => ({
+                            width: 72,
+                            height: 72,
+                            borderRadius: 36,
+                            backgroundColor: isRecording ? '#EF4444' : '#0066cc',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: 10,
+                            opacity: pressed ? 0.85 : 1,
+                          })}
+                        >
+                          <Ionicons
+                            name={isRecording ? 'stop' : 'mic'}
+                            size={32}
+                            color="#fff"
+                          />
+                        </Pressable>
+                        <Text className="text-[13px] text-ink-muted text-center leading-5">
+                          {isRecording
+                            ? '녹음 중... 버튼에서 손 떼면 저장'
+                            : '버튼을 누르는 동안 녹음됩니다'}
+                        </Text>
+                      </View>
+                    ) : (
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center flex-1">
+                          <Ionicons name="musical-notes" size={20} color="#0066cc" />
+                          <Text className="ml-2 text-sm text-ink font-medium">
+                            녹음 완료 ({durationSec}초)
+                          </Text>
+                        </View>
+                        <View className="flex-row gap-2">
+                          <TouchableOpacity
+                            onPress={playPreview}
+                            className="w-9 h-9 rounded-full bg-canvas border border-hairline items-center justify-center active:scale-95"
+                          >
+                            <Ionicons
+                              name={isPlaying ? 'pause' : 'play'}
+                              size={18}
+                              color="#0066cc"
+                            />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => clearRecording()}
+                            className="w-9 h-9 rounded-full bg-canvas border border-hairline items-center justify-center active:scale-95"
+                          >
+                            <Ionicons name="refresh" size={18} color="#7a7a7a" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </View>
+
               {/* 저장 버튼 */}
               <TouchableOpacity
                 onPress={handleSave}
-                disabled={saving || geocoding || (isForFriend && !selectedFriend)}
+                disabled={saving || geocoding || (isForFriend && !selectedFriend) || (soundType === 'custom' && !recordingUri)}
                 className={`rounded-full py-3.5 items-center active:scale-95 ${
-                  saving || geocoding || (isForFriend && !selectedFriend) ? 'bg-primary/50' : 'bg-primary'
+                  saving || geocoding || (isForFriend && !selectedFriend) || (soundType === 'custom' && !recordingUri) ? 'bg-primary/50' : 'bg-primary'
                 }`}
               >
                 {saving ? (
