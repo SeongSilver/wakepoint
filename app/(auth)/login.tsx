@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   View,
   Text,
+  Image,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
@@ -12,6 +13,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
+import { Ionicons } from '@expo/vector-icons';
 import { login, isKakaoTalkLoginAvailable } from '@react-native-kakao/user';
 import { supabase } from '@/lib/supabase';
 
@@ -20,8 +22,10 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [kakaoLoading, setKakaoLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const anyLoading = loading || kakaoLoading;
+  const canLogin = agreedToTerms && !anyLoading;
 
   const handleEmailLogin = async () => {
     if (!email || !password) {
@@ -97,10 +101,12 @@ export default function LoginScreen() {
       <View className="flex-1 justify-center px-6">
         {/* 로고 */}
         <View className="items-center mb-12">
-          <Text className="text-4xl font-semibold tracking-tight text-primary">
-            다왔어
-          </Text>
-          <Text className="text-sm text-ink-muted mt-2">
+          <Image
+            source={require('../../assets/images/logo-horizontal.png')}
+            className="w-52 h-14"
+            resizeMode="contain"
+          />
+          <Text className="text-sm text-ink-muted mt-3">
             목적지에 다 왔을 때 알려드려요
           </Text>
         </View>
@@ -137,8 +143,8 @@ export default function LoginScreen() {
         {/* 이메일 로그인 버튼 */}
         <TouchableOpacity
           onPress={handleEmailLogin}
-          disabled={anyLoading}
-          className={`bg-primary rounded-full px-6 py-3.5 items-center mb-3 active:scale-95 ${anyLoading ? 'opacity-60' : ''}`}
+          disabled={!canLogin}
+          className={`bg-primary rounded-full px-6 py-3.5 items-center mb-3 active:scale-95 ${!canLogin ? 'opacity-60' : ''}`}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
@@ -157,8 +163,8 @@ export default function LoginScreen() {
         {/* 구글 로그인 */}
         <TouchableOpacity
           onPress={handleGoogleLogin}
-          disabled={anyLoading}
-          className={`flex-row items-center justify-center border border-hairline rounded-full px-6 py-3.5 mb-3 active:scale-95 ${anyLoading ? 'opacity-60' : ''}`}
+          disabled={!canLogin}
+          className={`flex-row items-center justify-center border border-hairline rounded-full px-6 py-3.5 mb-3 active:scale-95 ${!canLogin ? 'opacity-60' : ''}`}
         >
           <Text className="text-lg mr-2">G</Text>
           <Text className="text-ink font-semibold text-[17px]">Google로 계속하기</Text>
@@ -167,8 +173,8 @@ export default function LoginScreen() {
         {/* 카카오 로그인 */}
         <TouchableOpacity
           onPress={handleKakaoLogin}
-          disabled={anyLoading}
-          className={`flex-row items-center justify-center bg-kakao rounded-full px-6 py-3.5 mb-8 active:scale-95 ${anyLoading ? 'opacity-60' : ''}`}
+          disabled={!canLogin}
+          className={`flex-row items-center justify-center bg-kakao rounded-full px-6 py-3.5 mb-5 active:scale-95 ${!canLogin ? 'opacity-60' : ''}`}
         >
           {kakaoLoading ? (
             <ActivityIndicator color="#000000" />
@@ -179,6 +185,40 @@ export default function LoginScreen() {
             </>
           )}
         </TouchableOpacity>
+
+        {/* 이용약관 동의 */}
+        <View className="mb-6">
+          <TouchableOpacity
+            onPress={() => setAgreedToTerms((v) => !v)}
+            className="flex-row items-center"
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={agreedToTerms ? 'checkbox' : 'square-outline'}
+              size={22}
+              color={agreedToTerms ? '#0066cc' : '#7a7a7a'}
+            />
+            <Text className="text-sm text-ink ml-2 flex-1">
+              이용약관 및 개인정보처리방침에 동의합니다
+            </Text>
+          </TouchableOpacity>
+          <View className="flex-row items-center ml-8 mt-1.5">
+            <TouchableOpacity
+              onPress={() => router.push('/terms')}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+            >
+              <Text className="text-sm text-primary">이용약관</Text>
+            </TouchableOpacity>
+            <Text className="text-sm text-ink-muted mx-1.5">·</Text>
+            <TouchableOpacity
+              onPress={() => router.push('/privacy')}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+            >
+              <Text className="text-sm text-primary">개인정보처리방침</Text>
+            </TouchableOpacity>
+            <Text className="text-sm text-ink-muted ml-1">보기</Text>
+          </View>
+        </View>
 
         {/* 회원가입 링크 */}
         <View className="flex-row justify-center">
