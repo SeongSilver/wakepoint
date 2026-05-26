@@ -67,6 +67,16 @@ module.exports = {
     plugins: [
       'expo-router',
       [
+        'expo-build-properties',
+        {
+          android: {
+            extraMavenRepos: [
+              'https://devrepo.kakao.com/nexus/content/groups/public/',
+            ],
+          },
+        },
+      ],
+      [
         'expo-location',
         {
           locationAlwaysAndWhenInUsePermission:
