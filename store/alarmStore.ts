@@ -1,20 +1,23 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alarm } from '@/types';
+import { Alarm, AlarmRingState } from '@/types';
 
 interface AlarmStore {
   activeAlarms: Alarm[];
+  ringingAlarm: AlarmRingState | null;
   addAlarm: (alarm: Alarm) => void;
   removeAlarm: (id: string) => void;
   updateAlarm: (id: string, updates: Partial<Alarm>) => void;
   clearTriggered: (id: string) => void;
+  setRingingAlarm: (alarm: AlarmRingState | null) => void;
 }
 
 export const useAlarmStore = create<AlarmStore>()(
   persist(
     (set) => ({
       activeAlarms: [],
+      ringingAlarm: null,
       addAlarm: (alarm) =>
         set((s) => ({ activeAlarms: [...s.activeAlarms, alarm] })),
       removeAlarm: (id) =>
@@ -29,7 +32,12 @@ export const useAlarmStore = create<AlarmStore>()(
         set((s) => ({
           activeAlarms: s.activeAlarms.filter((a) => a.id !== id),
         })),
+      setRingingAlarm: (alarm) => set({ ringingAlarm: alarm }),
     }),
-    { name: 'alarm-store', storage: createJSONStorage(() => AsyncStorage) }
+    {
+      name: 'alarm-store',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({ activeAlarms: state.activeAlarms }),
+    }
   )
 );
