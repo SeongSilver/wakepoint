@@ -10,6 +10,15 @@ export interface Alarm {
   is_active: boolean;
   triggered_at?: string;
   created_at: string;
+  sound_type?: 'default' | 'custom';
+  sound_uri?: string;
+}
+
+export interface AlarmRingState {
+  id: string;
+  label: string;
+  soundType: 'default' | 'custom';
+  soundUri?: string;
 }
 
 export interface UserProfile {
@@ -35,4 +44,10 @@ export interface FriendRelation {
   user_id: string;
   friend_id: string;
   created_at: string;
+}
+
+export interface FcmPayload {
+  title: string;
+  body: string;
+  data?: Record<string, string>;
 }
