@@ -1,0 +1,33 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://jgpvqgatoeufjlkqaapo.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_m4yCVD50r90CnhlJ0J5Pqw_Eff6GntD",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyAEPtNNiUWmcI_enbKBiLnhr2diI8LBUCk",
+        "EXPO_PUBLIC_KAKAO_REST_API_KEY": "ef410e084a01fef3eba8a1967d9625a8",
+        "EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY": "fc158a4562eec3d238af01fa5275ca0c"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://jgpvqgatoeufjlkqaapo.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_m4yCVD50r90CnhlJ0J5Pqw_Eff6GntD",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyAEPtNNiUWmcI_enbKBiLnhr2diI8LBUCk",
+        "EXPO_PUBLIC_KAKAO_REST_API_KEY": "ef410e084a01fef3eba8a1967d9625a8",
+        "EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY": "fc158a4562eec3d238af01fa5275ca0c"
+      }
+    }
+  }
+}
