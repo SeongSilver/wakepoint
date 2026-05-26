@@ -83,20 +83,20 @@ export default function RootLayout() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        if (_event === 'SIGNED_IN') {
-          registerPushToken(session.user.id);
-          cleanupPushListeners?.();
-          cleanupPushListeners = setupPushListeners(session.user.id);
-          if (pendingInviteFrom) {
-            const from = pendingInviteFrom;
-            pendingInviteFrom = null;
-            router.replace({ pathname: '/invite', params: { from } });
-            return;
-          }
+      // INITIAL_SESSION은 getSession()이 이미 처리한다 — 여기서 navigate하면 이중 실행
+      // TOKEN_REFRESHED, USER_UPDATED 등도 navigate 대상이 아님
+      if (_event === 'SIGNED_IN') {
+        registerPushToken(session!.user.id);
+        cleanupPushListeners?.();
+        cleanupPushListeners = setupPushListeners(session!.user.id);
+        if (pendingInviteFrom) {
+          const from = pendingInviteFrom;
+          pendingInviteFrom = null;
+          router.replace({ pathname: '/invite', params: { from } });
+          return;
         }
         router.replace('/(tabs)');
-      } else {
+      } else if (_event === 'SIGNED_OUT') {
         cleanupPushListeners?.();
         cleanupPushListeners = undefined;
         router.replace('/(auth)/login');

@@ -25,9 +25,9 @@ export function useLocation() {
     const sync = async () => {
       try {
         const tracking = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
-        if (mounted) setIsTracking(tracking);
+        if (mounted) setIsTracking((prev) => (prev === tracking ? prev : tracking));
       } catch {
-        if (mounted) setIsTracking(false);
+        if (mounted) setIsTracking((prev) => (prev ? false : prev));
       }
     };
     sync();

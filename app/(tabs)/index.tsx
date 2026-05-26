@@ -122,7 +122,10 @@ function EmptyState() {
 }
 
 export default function HomeScreen() {
-  const { activeAlarms, removeAlarm, ringingAlarm, setRingingAlarm } = useAlarmStore();
+  const activeAlarms = useAlarmStore((s) => s.activeAlarms);
+  const removeAlarm = useAlarmStore((s) => s.removeAlarm);
+  const ringingAlarm = useAlarmStore((s) => s.ringingAlarm);
+  const setRingingAlarm = useAlarmStore((s) => s.setRingingAlarm);
   const profile = useUserStore((s) => s.profile);
   const { receivedPending, respondingId, fetchReceivedPending, respondToRequest } =
     useAlarmPermissions();
@@ -194,7 +197,7 @@ export default function HomeScreen() {
       className="flex-1 bg-parchment"
       style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#f5f5f7" />
+      <StatusBar barStyle="dark-content" />
 
       {/* 헤더 */}
       <AppHeader>

@@ -12,15 +12,15 @@ import { useLocation } from '@/hooks/useLocation';
  */
 export function useTrackingSync() {
   const { startTracking, stopTracking } = useLocation();
-  const activeAlarms = useAlarmStore((s) => s.activeAlarms);
-  const prevCountRef = useRef(activeAlarms.length);
+  const alarmsCount = useAlarmStore((s) => s.activeAlarms.length);
+  const prevCountRef = useRef(alarmsCount);
   // closure 없이 최신 알람 수를 AppState 핸들러에서 참조
-  const alarmsLengthRef = useRef(activeAlarms.length);
-  alarmsLengthRef.current = activeAlarms.length;
+  const alarmsLengthRef = useRef(alarmsCount);
+  alarmsLengthRef.current = alarmsCount;
 
   // 앱 재시작 시 퍼시스트된 알람이 있으면 추적 재개 시도
   useEffect(() => {
-    if (activeAlarms.length > 0) {
+    if (alarmsCount > 0) {
       startTracking().catch((err: Error) => {
         Alert.alert('위치 권한 필요', err.message, [{ text: '확인' }]);
       });
@@ -45,7 +45,7 @@ export function useTrackingSync() {
   // 알람 수 변화에 따른 추적 시작/중단
   useEffect(() => {
     const prev = prevCountRef.current;
-    const curr = activeAlarms.length;
+    const curr = alarmsCount;
     prevCountRef.current = curr;
 
     if (curr > 0 && prev === 0) {
@@ -57,5 +57,5 @@ export function useTrackingSync() {
         console.error('[TrackingSync] stopTracking error:', err.message);
       });
     }
-  }, [activeAlarms.length, startTracking, stopTracking]);
+  }, [alarmsCount, startTracking, stopTracking]);
 }

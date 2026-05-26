@@ -97,7 +97,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-canvas"
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" />
       <View className="flex-1 justify-center px-6">
         {/* 로고 */}
         <View className="items-center mb-12">
