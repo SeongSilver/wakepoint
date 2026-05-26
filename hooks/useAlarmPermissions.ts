@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/userStore';
 import { UserProfile } from '@/types';
+import { sendFcmToUser } from '@/lib/firebase';
 
 export interface ReceivedPermissionRequest {
   id: string;
@@ -117,7 +118,7 @@ export function useAlarmPermissions() {
     }
   }, [profile?.id]);
 
-  const requestPermission = useCallback(async (targetId: string) => {
+  const requestPermission = useCallback(async (targetId: string, targetPushToken?: string) => {
     if (!profile?.id) return;
     setRequestingId(targetId);
     try {
@@ -130,10 +131,17 @@ export function useAlarmPermissions() {
       if (error) throw error;
 
       setSentRequests((prev) => [...prev, data as unknown as SentPermissionRequest]);
+
+      if (targetPushToken && profile.nickname) {
+        sendFcmToUser(targetPushToken, {
+          title: '알람 설정 권한 요청 🔔',
+          body: `${profile.nickname}님이 알람 설정 권한을 요청했어요`,
+        }).catch(() => {});
+      }
     } finally {
       setRequestingId(null);
     }
-  }, [profile?.id]);
+  }, [profile]);
 
   const respondToRequest = useCallback(async (
     permissionId: string,

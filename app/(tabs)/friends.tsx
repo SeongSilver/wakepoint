@@ -91,9 +91,9 @@ export default function FriendsScreen() {
     }
   }, [addFriend]);
 
-  const handleRequestPermission = useCallback(async (targetId: string) => {
+  const handleRequestPermission = useCallback(async (targetId: string, targetPushToken?: string) => {
     try {
-      await requestPermission(targetId);
+      await requestPermission(targetId, targetPushToken);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('duplicate') || msg.includes('unique')) {
@@ -214,7 +214,7 @@ export default function FriendsScreen() {
         <View className="mt-2.5 pt-2.5 border-t border-hairline flex-row">
           {permStatus === null && (
             <TouchableOpacity
-              onPress={() => handleRequestPermission(item.profile.id)}
+              onPress={() => handleRequestPermission(item.profile.id, item.profile.push_token)}
               disabled={isRequesting}
               className="flex-row items-center bg-parchment border border-hairline rounded-full px-3 py-1.5 active:scale-95"
             >

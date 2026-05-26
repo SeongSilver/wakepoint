@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import { FcmPayload } from '@/types';
 
 // 에뮬레이터/시뮬레이터는 executionEnvironment가 'storeClient'(Expo Go) 또는 'standalone'
 // isDevice가 없으므로 getExpoPushTokenAsync의 에러로 gracefully 처리
@@ -62,4 +63,24 @@ export function setupPushListeners(userId: string): () => void {
     tokenSub.remove();
     responseSub.remove();
   };
+}
+
+/**
+ * Supabase Edge Function을 경유해 대상 기기에 FCM 푸시 알림을 발송한다.
+ * FCM 서버 키는 Edge Function에만 보관되어 클라이언트에 노출되지 않는다.
+ */
+export async function sendFcmToUser(targetPushToken: string, payload: FcmPayload): Promise<void> {
+  try {
+    const { error } = await supabase.functions.invoke('send-push', {
+      body: {
+        token: targetPushToken,
+        title: payload.title,
+        body: payload.body,
+        data: payload.data,
+      },
+    });
+    if (error) console.error('[sendFcmToUser]', error.message);
+  } catch (err) {
+    console.error('[sendFcmToUser]', err);
+  }
 }
