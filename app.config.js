@@ -5,13 +5,13 @@ module.exports = {
     scheme: ['dawasseo', 'wakepoint'],
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/images/logo-icon.png',
+    icon: './assets/images/logo-square.png',
     userInterfaceStyle: 'light',
     newArchEnabled: true,
     splash: {
-      image: './assets/images/logo-vertical.png',
+      image: './assets/images/logo-square.png',
       resizeMode: 'contain',
-      backgroundColor: '#ffffff',
+      backgroundColor: '#4F46E5',
     },
     ios: {
       supportsTablet: true,
@@ -28,8 +28,8 @@ module.exports = {
     android: {
       package: 'com.yourname.wakepoint',
       adaptiveIcon: {
-        foregroundImage: './assets/images/logo-icon.png',
-        backgroundColor: '#ffffff',
+        foregroundImage: './assets/images/logo-square.png',
+        backgroundColor: '#4F46E5',
       },
       edgeToEdgeEnabled: true,
       permissions: [
@@ -44,6 +44,22 @@ module.exports = {
           apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
         },
       },
+      intentFilters: [
+        {
+          // dawasseo:// 스킴 전체를 처리 — 카카오 초대 딥링크 포함
+          action: 'VIEW',
+          autoVerify: false,
+          data: [{ scheme: 'dawasseo' }],
+          category: ['BROWSABLE', 'DEFAULT'],
+        },
+        {
+          // wakepoint:// 스킴 (Google OAuth 콜백 등 보조 스킴)
+          action: 'VIEW',
+          autoVerify: false,
+          data: [{ scheme: 'wakepoint' }],
+          category: ['BROWSABLE', 'DEFAULT'],
+        },
+      ],
     },
     web: {
       favicon: './assets/images/favicon.ico',
