@@ -5,11 +5,11 @@ module.exports = {
     scheme: ['dawasseo', 'wakepoint'],
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/images/logo-square.png',
+    icon: './assets/images/logo-vertical.png',
     userInterfaceStyle: 'light',
     newArchEnabled: true,
     splash: {
-      image: './assets/images/logo-square.png',
+      image: './assets/images/logo-vertical.png',
       resizeMode: 'contain',
       backgroundColor: '#4F46E5',
     },
@@ -28,7 +28,7 @@ module.exports = {
     android: {
       package: 'com.yourname.wakepoint',
       adaptiveIcon: {
-        foregroundImage: './assets/images/logo-square.png',
+        foregroundImage: './assets/images/logo-vertical.png',
         backgroundColor: '#4F46E5',
       },
       edgeToEdgeEnabled: true,
