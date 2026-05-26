@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,16 +7,22 @@ import {
   ActivityIndicator,
   StatusBar,
   Platform,
+  AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { Audio } from 'expo-av';
+import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlarmStore } from '@/store/alarmStore';
 import { useAlarmPermissions, ReceivedPermissionRequest } from '@/hooks/useAlarmPermissions';
 import { useUserStore } from '@/store/userStore';
-import { Alarm } from '@/types';
+import { Alarm, AlarmRingState } from '@/types';
 import { formatDistance } from '@/lib/location';
 import AppHeader from '@/components/ui/AppHeader';
+
+const RINGING_KEY = 'wakepoint-ringing';
 
 function AlarmCard({ alarm, onDelete }: { alarm: Alarm; onDelete: (id: string) => void }) {
   return (
@@ -116,14 +122,72 @@ function EmptyState() {
 }
 
 export default function HomeScreen() {
-  const { activeAlarms, removeAlarm } = useAlarmStore();
+  const { activeAlarms, removeAlarm, ringingAlarm, setRingingAlarm } = useAlarmStore();
   const profile = useUserStore((s) => s.profile);
   const { receivedPending, respondingId, fetchReceivedPending, respondToRequest } =
     useAlarmPermissions();
+  const ringerSoundRef = useRef<Audio.Sound | null>(null);
 
   useEffect(() => {
     if (profile?.id) fetchReceivedPending();
   }, [profile?.id, fetchReceivedPending]);
+
+  // AsyncStorage에서 ringing 상태 복원 (백그라운드 → 포그라운드 전환 시)
+  useEffect(() => {
+    const checkRinging = async () => {
+      const raw = await AsyncStorage.getItem(RINGING_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as AlarmRingState;
+        setRingingAlarm(parsed);
+      }
+    };
+    checkRinging();
+
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') checkRinging();
+    });
+    return () => sub.remove();
+  }, [setRingingAlarm]);
+
+  // ringingAlarm 변경 시 사운드 재생 + 진동
+  useEffect(() => {
+    if (!ringingAlarm) return;
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+
+    if (ringingAlarm.soundType === 'custom' && ringingAlarm.soundUri) {
+      (async () => {
+        try {
+          await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true });
+          const { sound } = await Audio.Sound.createAsync(
+            { uri: ringingAlarm.soundUri! },
+            { isLooping: true, shouldPlay: true }
+          );
+          ringerSoundRef.current = sound;
+        } catch (err) {
+          console.error('[HomeScreen] ringerSound error:', err);
+        }
+      })();
+    }
+
+    return () => {
+      ringerSoundRef.current?.stopAsync().catch(() => {});
+      ringerSoundRef.current?.unloadAsync().catch(() => {});
+      ringerSoundRef.current = null;
+    };
+  }, [ringingAlarm]);
+
+  const stopRinger = async () => {
+    if (ringerSoundRef.current) {
+      try {
+        await ringerSoundRef.current.stopAsync();
+        await ringerSoundRef.current.unloadAsync();
+      } catch {}
+      ringerSoundRef.current = null;
+    }
+    await AsyncStorage.removeItem(RINGING_KEY);
+    setRingingAlarm(null);
+  };
 
   return (
     <SafeAreaView
@@ -140,6 +204,33 @@ export default function HomeScreen() {
           </Text>
         )}
       </AppHeader>
+
+      {/* 알람 울리는 중 배너 */}
+      {ringingAlarm && (
+        <View className="mx-4 mb-2 bg-canvas border border-hairline rounded-[18px] overflow-hidden">
+          <View className="flex-row items-center px-4 py-3">
+            <View
+              className="w-9 h-9 rounded-full items-center justify-center mr-3"
+              style={{ backgroundColor: 'rgba(0,102,204,0.10)' }}
+            >
+              <Ionicons name="alarm" size={18} color="#0066cc" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-[14px] font-semibold text-primary">알람 울리는 중</Text>
+              <Text className="text-[12px] text-ink-muted mt-0.5" numberOfLines={1}>
+                {ringingAlarm.label}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={stopRinger}
+              className="bg-primary rounded-full px-4 py-2 active:scale-95 ml-3"
+            >
+              <Text className="text-xs font-semibold text-white">중지</Text>
+            </TouchableOpacity>
+          </View>
+          <View className="h-1 bg-primary/10" />
+        </View>
+      )}
 
       {/* 대기 중인 권한 요청 배너 */}
       {receivedPending.length > 0 && (

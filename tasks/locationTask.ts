@@ -1,9 +1,13 @@
 import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { calculateDistance } from '@/lib/location';
 import { triggerAlarm } from '@/lib/alarm';
 import { useAlarmStore } from '@/store/alarmStore';
 import { supabase } from '@/lib/supabase';
+import { AlarmRingState } from '@/types';
+
+const RINGING_KEY = 'wakepoint-ringing';
 
 export const LOCATION_TASK_NAME = 'background-location-task';
 
@@ -47,10 +51,21 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
     // 1. 알림 발송
     await triggerAlarm(alarm);
 
-    // 2. 로컬 스토어에서 제거
+    // 2. ringing 상태 저장 (포그라운드 감지 + 백그라운드→포그라운드 전환 시 복원)
+    const ringState: AlarmRingState = {
+      id: alarm.id,
+      label: alarm.label,
+      soundType: alarm.sound_type ?? 'default',
+      soundUri: alarm.sound_uri,
+    };
+    await AsyncStorage.setItem(RINGING_KEY, JSON.stringify(ringState));
+    // 포그라운드 컨텍스트인 경우 스토어 직접 업데이트 (즉시 UI 반영)
+    useAlarmStore.getState().setRingingAlarm(ringState);
+
+    // 3. 로컬 스토어에서 제거
     clearTriggered(alarm.id);
 
-    // 3. Supabase 기록 업데이트 (로컬 전용 알람 제외)
+    // 4. Supabase 기록 업데이트 (로컬 전용 알람 제외)
     if (!alarm.id.startsWith('local-')) {
       supabase
         .from('alarms')
