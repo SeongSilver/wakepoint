@@ -102,7 +102,7 @@ export default function LoginScreen() {
         {/* 로고 */}
         <View className="items-center mb-12">
           <Image
-            source={require('../../assets/images/logo-horizontal.png')}
+            source={require('../../assets/images/logo-basic.png')}
             className="w-52 h-14"
             resizeMode="contain"
           />
