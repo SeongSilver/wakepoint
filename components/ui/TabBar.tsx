@@ -10,8 +10,8 @@ type TabConfig = {
 };
 
 const TAB_CONFIG: Record<string, TabConfig> = {
-  index:   { label: '알람', icon: 'alarm-outline',    iconActive: 'alarm' },
-  map:     { label: '지도', icon: 'location-outline', iconActive: 'location-sharp' },
+  index:   { label: '지도', icon: 'map-outline',      iconActive: 'map' },
+  alarms:  { label: '알람', icon: 'alarm-outline',    iconActive: 'alarm' },
   friends: { label: '친구', icon: 'people-outline',   iconActive: 'people' },
 };
 
