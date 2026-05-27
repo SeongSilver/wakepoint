@@ -1,283 +1,835 @@
-import { useEffect, useRef } from 'react';
+import { useState, useRef, useCallback, Fragment } from 'react';
 import {
   View,
   Text,
-  FlatList,
+  TextInput,
   TouchableOpacity,
+  Pressable,
   ActivityIndicator,
-  StatusBar,
+  Animated,
+  Keyboard,
+  KeyboardAvoidingView,
   Platform,
-  AppState,
+  Alert,
+  ScrollView,
+  StatusBar,
+  Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRecording } from '@/hooks/useRecording';
+import MapView, { Marker, Circle, Callout, MapPressEvent, PoiClickEvent, Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { router } from 'expo-router';
-import { Audio } from 'expo-av';
-import * as Haptics from 'expo-haptics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlarmStore } from '@/store/alarmStore';
-import { useAlarmPermissions, ReceivedPermissionRequest } from '@/hooks/useAlarmPermissions';
 import { useUserStore } from '@/store/userStore';
-import { Alarm, AlarmRingState } from '@/types';
-import { formatDistance } from '@/lib/location';
-import AppHeader from '@/components/ui/AppHeader';
+import { useAlarmPermissions } from '@/hooks/useAlarmPermissions';
+import { useFriendAlarmListener } from '@/hooks/useFriendAlarmListener';
+import { validateRadius, formatDistance } from '@/lib/location';
+import { supabase } from '@/lib/supabase';
+import { sendFcmToUser } from '@/lib/firebase';
+import { Alarm, UserProfile } from '@/types';
 
-const RINGING_KEY = 'wakepoint-ringing';
+const KAKAO_API_KEY = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY;
 
-function AlarmCard({ alarm, onDelete }: { alarm: Alarm; onDelete: (id: string) => void }) {
-  return (
-    <View className="flex-row bg-canvas rounded-[18px] mx-4 mb-3 border border-hairline overflow-hidden">
-      <View className={`w-1 ${alarm.is_active ? 'bg-primary' : 'bg-[#e0e0e0]'}`} />
-      <View className="flex-1 p-4">
-        <View className="flex-row items-start justify-between">
-          <View className="flex-1 mr-3">
-            <Text className="text-[17px] font-semibold text-ink">{alarm.label}</Text>
-            <Text className="text-sm text-ink-muted mt-1" numberOfLines={1}>
-              {alarm.target_address || '주소 없음'}
-            </Text>
-          </View>
-          <View className={`rounded-full px-2 py-0.5 ${alarm.is_active ? 'bg-primary/10' : 'bg-parchment'}`}>
-            <Text className={`text-xs font-medium ${alarm.is_active ? 'text-primary' : 'text-ink-muted'}`}>
-              {formatDistance(alarm.radius_km)}
-            </Text>
-          </View>
-        </View>
+const RADIUS_PRESETS = [
+  { label: '300m', value: 0.3 },
+  { label: '500m', value: 0.5 },
+  { label: '1km',  value: 1 },
+  { label: '2km',  value: 2 },
+  { label: '5km',  value: 5 },
+  { label: '10km', value: 10 },
+  { label: '20km', value: 20 },
+  { label: '50km', value: 50 },
+];
 
-        <View className="flex-row items-center mt-3 pt-3 border-t border-hairline">
-          <View className="flex-row items-center flex-1">
-            <View className={`w-2 h-2 rounded-full mr-2 ${alarm.is_active ? 'bg-primary' : 'bg-[#e0e0e0]'}`} />
-            <Text className="text-xs text-ink-muted">{alarm.is_active ? '활성화됨' : '비활성'}</Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => onDelete(alarm.id)}
-            className="bg-danger rounded-full px-3 py-1.5 active:scale-95"
-          >
-            <Text className="text-xs font-medium text-white">삭제</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
+const BOTTOM_PANEL_HEIGHT = 720;
+const SEOUL_REGION: Region = {
+  latitude: 37.5665,
+  longitude: 126.978,
+  latitudeDelta: 0.08,
+  longitudeDelta: 0.08,
+};
+
+const STATUS_BAR_H = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 44;
+const SEARCH_TOP = STATUS_BAR_H + 8;
+
+const ALARM_MARKER = require('../../assets/images/icon-point.png');
+
+interface SelectedLocation {
+  latitude: number;
+  longitude: number;
+  address: string;
 }
 
-function PermissionRequestItem({
-  request,
-  responding,
-  onRespond,
-}: {
-  request: ReceivedPermissionRequest;
-  responding: boolean;
-  onRespond: (id: string, status: 'accepted' | 'rejected') => void;
-}) {
-  return (
-    <View className="mb-2 last:mb-0">
-      <Text className="text-[14px] text-ink mb-2" numberOfLines={2}>
-        <Text className="font-semibold">{request.requesterProfile.nickname}</Text>
-        {'님이 알람 권한을 요청했습니다'}
-      </Text>
-      <View className="flex-row gap-2">
-        <TouchableOpacity
-          onPress={() => onRespond(request.id, 'accepted')}
-          disabled={responding}
-          className="flex-1 bg-primary rounded-full py-2 items-center active:scale-95"
-        >
-          {responding ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text className="text-[13px] font-semibold text-white">수락</Text>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => onRespond(request.id, 'rejected')}
-          disabled={responding}
-          className="flex-1 bg-canvas border border-hairline rounded-full py-2 items-center active:scale-95"
-        >
-          <Text className="text-[13px] font-semibold text-ink-muted">거절</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
-function EmptyState() {
-  return (
-    <View className="flex-1 items-center justify-center px-8">
-      <View className="w-24 h-24 rounded-full bg-parchment items-center justify-center mb-2">
-        <Ionicons name="walk" size={48} color="#0066cc" />
-      </View>
-      <Text className="text-2xl font-semibold text-ink mt-6 text-center">
-        아직 알람이 없어요
-      </Text>
-      <Text className="text-sm text-ink-muted mt-2 text-center leading-5">
-        목적지를 설정하면 근처에 도착했을 때{'\n'}자동으로 알림을 보내드릴게요
-      </Text>
-      <TouchableOpacity
-        onPress={() => router.push('/(tabs)/map')}
-        className="mt-6 bg-primary rounded-full px-6 py-3 active:scale-95"
-      >
-        <Text className="text-white font-semibold text-sm">지도에서 알람 설정하기</Text>
-      </TouchableOpacity>
-    </View>
-  );
+interface KakaoPlace {
+  place_name: string;
+  road_address_name: string;
+  address_name: string;
+  x: string; // longitude
+  y: string; // latitude
 }
 
 export default function HomeScreen() {
+  const mapRef = useRef<MapView>(null);
+  const panelAnim = useRef(new Animated.Value(0)).current;
+  const searchInputRef = useRef<TextInput>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [selected, setSelected] = useState<SelectedLocation | null>(null);
+  const [radiusKm, setRadiusKm] = useState(0.5);
+  const [label, setLabel] = useState('');
+  const [geocoding, setGeocoding] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [panelVisible, setPanelVisible] = useState(false);
+
+  const [searchText, setSearchText] = useState('');
+  const [searchResults, setSearchResults] = useState<KakaoPlace[]>([]);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const [isForFriend, setIsForFriend] = useState(false);
+  const [selectedFriend, setSelectedFriend] = useState<UserProfile | null>(null);
+  const [soundType, setSoundType] = useState<'default' | 'custom'>('default');
+
+  const {
+    isRecording,
+    recordingUri,
+    isPlaying,
+    durationSec,
+    startRecording,
+    stopRecording,
+    playPreview,
+    uploadRecording,
+    clearRecording,
+  } = useRecording();
+
+  const addAlarm = useAlarmStore((s) => s.addAlarm);
   const activeAlarms = useAlarmStore((s) => s.activeAlarms);
-  const removeAlarm = useAlarmStore((s) => s.removeAlarm);
-  const ringingAlarm = useAlarmStore((s) => s.ringingAlarm);
-  const setRingingAlarm = useAlarmStore((s) => s.setRingingAlarm);
   const profile = useUserStore((s) => s.profile);
-  const { receivedPending, respondingId, fetchReceivedPending, respondToRequest } =
-    useAlarmPermissions();
-  const ringerSoundRef = useRef<Audio.Sound | null>(null);
 
-  useEffect(() => {
-    if (profile?.id) fetchReceivedPending();
-  }, [profile?.id, fetchReceivedPending]);
+  useFriendAlarmListener();
+  const { acceptedFriends, loadingAccepted, fetchAcceptedFriends } = useAlarmPermissions();
 
-  // AsyncStorage에서 ringing 상태 복원 (백그라운드 → 포그라운드 전환 시)
-  useEffect(() => {
-    const checkRinging = async () => {
-      const raw = await AsyncStorage.getItem(RINGING_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as AlarmRingState;
-        setRingingAlarm(parsed);
-      }
-    };
-    checkRinging();
+  const showPanel = useCallback(() => {
+    setPanelVisible(true);
+    Animated.spring(panelAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 65,
+      friction: 11,
+    }).start();
+  }, [panelAnim]);
 
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') checkRinging();
+  const hidePanel = useCallback(() => {
+    Keyboard.dismiss();
+    Animated.timing(panelAnim, {
+      toValue: 0,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => {
+      setPanelVisible(false);
+      setSelected(null);
+      setLabel('');
+      setRadiusKm(0.5);
+      setIsForFriend(false);
+      setSelectedFriend(null);
+      setSoundType('default');
+      clearRecording();
     });
-    return () => sub.remove();
-  }, [setRingingAlarm]);
+  }, [panelAnim, clearRecording]);
 
-  // ringingAlarm 변경 시 사운드 재생 + 진동
-  useEffect(() => {
-    if (!ringingAlarm) return;
+  const panelTranslateY = panelAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [BOTTOM_PANEL_HEIGHT, 0],
+  });
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+  const searchKakao = useCallback((query: string) => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
 
-    if (ringingAlarm.soundType === 'custom' && ringingAlarm.soundUri) {
-      (async () => {
-        try {
-          await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true });
-          const { sound } = await Audio.Sound.createAsync(
-            { uri: ringingAlarm.soundUri! },
-            { isLooping: true, shouldPlay: true }
-          );
-          ringerSoundRef.current = sound;
-        } catch (err) {
-          console.error('[HomeScreen] ringerSound error:', err);
-        }
-      })();
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
     }
 
-    return () => {
-      ringerSoundRef.current?.stopAsync().catch(() => {});
-      ringerSoundRef.current?.unloadAsync().catch(() => {});
-      ringerSoundRef.current = null;
-    };
-  }, [ringingAlarm]);
-
-  const stopRinger = async () => {
-    if (ringerSoundRef.current) {
+    searchDebounceRef.current = setTimeout(async () => {
+      setIsSearching(true);
       try {
-        await ringerSoundRef.current.stopAsync();
-        await ringerSoundRef.current.unloadAsync();
-      } catch {}
-      ringerSoundRef.current = null;
+        const res = await fetch(
+          `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&size=7`,
+          { headers: { Authorization: `KakaoAK ${KAKAO_API_KEY}` } }
+        );
+        const data = await res.json();
+        setSearchResults((data.documents as KakaoPlace[]) ?? []);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+  }, []);
+
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchText(text);
+    searchKakao(text);
+  }, [searchKakao]);
+
+  const clearSearch = useCallback(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    setSearchText('');
+    setSearchResults([]);
+    setIsSearchFocused(false);
+    setIsSearching(false);
+    Keyboard.dismiss();
+  }, []);
+
+  const handleSelectPlace = useCallback((place: KakaoPlace) => {
+    const latitude = parseFloat(place.y);
+    const longitude = parseFloat(place.x);
+    const roadAddr = place.road_address_name || place.address_name;
+    const address = place.place_name ? `${place.place_name}, ${roadAddr}` : roadAddr;
+
+    clearSearch();
+
+    setSelected({ latitude, longitude, address });
+    showPanel();
+
+    mapRef.current?.animateToRegion(
+      { latitude: latitude - 0.018, longitude, latitudeDelta: 0.06, longitudeDelta: 0.06 },
+      400
+    );
+  }, [showPanel, clearSearch]);
+
+  const handleMapPress = useCallback(async (e: MapPressEvent) => {
+    if (isSearchFocused) {
+      clearSearch();
+      return;
     }
-    await AsyncStorage.removeItem(RINGING_KEY);
-    setRingingAlarm(null);
-  };
+
+    const { latitude, longitude } = e.nativeEvent.coordinate;
+    Keyboard.dismiss();
+
+    setGeocoding(true);
+    setSelected({ latitude, longitude, address: '주소 불러오는 중...' });
+    showPanel();
+
+    mapRef.current?.animateToRegion(
+      { latitude: latitude - 0.018, longitude, latitudeDelta: 0.06, longitudeDelta: 0.06 },
+      400
+    );
+
+    try {
+      const [result] = await Location.reverseGeocodeAsync({ latitude, longitude });
+      const address = result
+        ? [result.street, result.district, result.city]
+            .filter(Boolean)
+            .join(', ') || result.formattedAddress || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+        : `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+
+      setSelected({ latitude, longitude, address });
+    } catch {
+      setSelected({ latitude, longitude, address: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}` });
+    } finally {
+      setGeocoding(false);
+    }
+  }, [showPanel, isSearchFocused, clearSearch]);
+
+  const handlePoiClick = useCallback(async (e: PoiClickEvent) => {
+    if (isSearchFocused) {
+      clearSearch();
+      return;
+    }
+
+    const { coordinate, name } = e.nativeEvent;
+    const { latitude, longitude } = coordinate;
+    Keyboard.dismiss();
+
+    setGeocoding(true);
+    setSelected({ latitude, longitude, address: '주소 불러오는 중...' });
+    setLabel(name);
+    showPanel();
+
+    mapRef.current?.animateToRegion(
+      { latitude: latitude - 0.018, longitude, latitudeDelta: 0.06, longitudeDelta: 0.06 },
+      400
+    );
+
+    try {
+      const [result] = await Location.reverseGeocodeAsync({ latitude, longitude });
+      const address = result
+        ? [result.street, result.district, result.city]
+            .filter(Boolean)
+            .join(', ') || result.formattedAddress || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+        : `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+
+      setSelected({ latitude, longitude, address });
+    } catch {
+      setSelected({ latitude, longitude, address: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}` });
+    } finally {
+      setGeocoding(false);
+    }
+  }, [showPanel, isSearchFocused, clearSearch]);
+
+  const handleMyLocation = useCallback(async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('권한 필요', '위치 권한을 허용해주세요.');
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      mapRef.current?.animateToRegion({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        latitudeDelta: 0.04,
+        longitudeDelta: 0.04,
+      }, 600);
+    } catch {
+      Alert.alert('오류', '현재 위치를 가져올 수 없습니다.');
+    }
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    if (!selected) return;
+
+    if (!validateRadius(radiusKm)) {
+      Alert.alert('반경 오류', '반경은 100m ~ 50km 사이여야 합니다.');
+      return;
+    }
+
+    if (isForFriend && !selectedFriend) {
+      Alert.alert('친구 선택', '알람을 받을 친구를 선택해주세요.');
+      return;
+    }
+
+    const alarmLabel = label.trim() || selected.address;
+    const now = new Date().toISOString();
+
+    setSaving(true);
+    let uploadedSoundUri: string | undefined;
+    if (soundType === 'custom' && recordingUri && profile?.id) {
+      uploadedSoundUri = (await uploadRecording(profile.id)) ?? undefined;
+      if (!uploadedSoundUri) {
+        Alert.alert('업로드 실패', '녹음 파일 업로드에 실패했습니다. 다시 시도해주세요.');
+        setSaving(false);
+        return;
+      }
+    }
+
+    try {
+      const userId = profile?.id ?? 'local';
+      const ownerId = isForFriend && selectedFriend ? selectedFriend.id : userId;
+
+      if (profile?.id) {
+        const { data, error } = await supabase
+          .from('alarms')
+          .insert({
+            owner_id: ownerId,
+            created_by: userId,
+            label: alarmLabel,
+            target_lat: selected.latitude,
+            target_lng: selected.longitude,
+            target_address: selected.address,
+            radius_km: radiusKm,
+            is_active: true,
+            sound_type: soundType,
+            sound_uri: uploadedSoundUri ?? null,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        if (!isForFriend) {
+          addAlarm(data as Alarm);
+        } else if (selectedFriend?.push_token && profile?.nickname) {
+          sendFcmToUser(selectedFriend.push_token, {
+            title: '알람이 설정됐어요 📍',
+            body: `${profile.nickname}님이 알람을 설정해줬어요`,
+          }).catch(() => {});
+        }
+      } else {
+        const localAlarm: Alarm = {
+          id: `local-${Date.now()}`,
+          owner_id: 'local',
+          created_by: 'local',
+          label: alarmLabel,
+          target_lat: selected.latitude,
+          target_lng: selected.longitude,
+          target_address: selected.address,
+          radius_km: radiusKm,
+          is_active: true,
+          created_at: now,
+          sound_type: soundType,
+          sound_uri: uploadedSoundUri,
+        };
+        addAlarm(localAlarm);
+      }
+
+      hidePanel();
+
+      const successBody = isForFriend && selectedFriend
+        ? `"${alarmLabel}" 알람을 ${selectedFriend.nickname}님을 위해 설정했습니다.\n목적지 반경 ${formatDistance(radiusKm)} 이내 진입 시 알림을 드립니다.`
+        : `"${alarmLabel}" 알람이 설정되었습니다.\n목적지 반경 ${formatDistance(radiusKm)} 이내 진입 시 알림을 드립니다.`;
+
+      Alert.alert('알람 설정 완료', successBody,
+        [{ text: '확인', onPress: () => router.push('/(tabs)/alarms') }]
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '저장에 실패했습니다.';
+      Alert.alert('저장 실패', msg);
+    } finally {
+      setSaving(false);
+    }
+  }, [selected, radiusKm, label, profile, addAlarm, hidePanel, isForFriend, selectedFriend, soundType, recordingUri, uploadRecording]);
+
+  const showDropdown = isSearchFocused && searchText.trim().length > 0;
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-parchment"
-      style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}
-    >
-      <StatusBar barStyle="dark-content" />
-
-      {/* 헤더 */}
-      <AppHeader>
-        {activeAlarms.length > 0 && (
-          <Text className="text-sm text-ink-muted">
-            {activeAlarms.length}개 활성화됨
-          </Text>
-        )}
-      </AppHeader>
-
-      {/* 알람 울리는 중 배너 */}
-      {ringingAlarm && (
-        <View className="mx-4 mb-2 bg-canvas border border-hairline rounded-[18px] overflow-hidden">
-          <View className="flex-row items-center px-4 py-3">
-            <View
-              className="w-9 h-9 rounded-full items-center justify-center mr-3"
-              style={{ backgroundColor: 'rgba(0,102,204,0.10)' }}
-            >
-              <Ionicons name="alarm" size={18} color="#0066cc" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[14px] font-semibold text-primary">알람 울리는 중</Text>
-              <Text className="text-[12px] text-ink-muted mt-0.5" numberOfLines={1}>
-                {ringingAlarm.label}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={stopRinger}
-              className="bg-primary rounded-full px-4 py-2 active:scale-95 ml-3"
-            >
-              <Text className="text-xs font-semibold text-white">중지</Text>
-            </TouchableOpacity>
-          </View>
-          <View className="h-1 bg-primary/10" />
-        </View>
-      )}
-
-      {/* 대기 중인 권한 요청 배너 */}
-      {receivedPending.length > 0 && (
-        <View className="mx-4 mb-2 bg-canvas border border-hairline rounded-[18px] p-4">
-          <View className="flex-row items-center mb-3">
-            <Ionicons name="notifications-outline" size={16} color="#0066cc" />
-            <Text className="text-[13px] font-semibold text-primary ml-1.5">
-              알람 권한 요청 {receivedPending.length}건
-            </Text>
-          </View>
-          {receivedPending.map((req, index) => (
-            <View key={req.id}>
-              {index > 0 && <View className="border-t border-hairline my-2" />}
-              <PermissionRequestItem
-                request={req}
-                responding={respondingId === req.id}
-                onRespond={respondToRequest}
-              />
-            </View>
-          ))}
-        </View>
-      )}
-
-      {activeAlarms.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <FlatList
-          data={activeAlarms}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <AlarmCard alarm={item} onDelete={removeAlarm} />
-          )}
-          contentContainerStyle={{ paddingTop: 8, paddingBottom: 120 }}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
-
-      {/* FAB — floating 탭바(~80px) 위로 배치 */}
-      <TouchableOpacity
-        onPress={() => router.push('/(tabs)/map')}
-        className="absolute bottom-24 right-6 w-14 h-14 bg-primary rounded-full items-center justify-center"
+    <View className="flex-1">
+      {/* 지도 */}
+      <MapView
+        ref={mapRef}
+        style={{ flex: 1 }}
+        initialRegion={SEOUL_REGION}
+        onPress={handleMapPress}
+        onPoiClick={handlePoiClick}
+        showsUserLocation
+        showsMyLocationButton={false}
+        toolbarEnabled={false}
       >
-        <Ionicons name="add" size={28} color="#ffffff" />
+        {/* 활성 알람 마커 */}
+        {activeAlarms.map((alarm) => (
+          <Fragment key={alarm.id}>
+            <Marker
+              coordinate={{ latitude: alarm.target_lat, longitude: alarm.target_lng }}
+              tracksViewChanges={false}
+            >
+              <Image
+                source={ALARM_MARKER}
+                style={{ width: 36, height: 36 }}
+                resizeMode="contain"
+              />
+              <Callout>
+                <View style={{ padding: 8, minWidth: 140 }}>
+                  <Text style={{ fontWeight: '600', fontSize: 14, color: '#1D1D1F', marginBottom: 2 }}>
+                    {alarm.label}
+                  </Text>
+                  {alarm.target_address ? (
+                    <Text style={{ fontSize: 12, color: '#7a7a7a', marginBottom: 2 }} numberOfLines={2}>
+                      {alarm.target_address}
+                    </Text>
+                  ) : null}
+                  <Text style={{ fontSize: 12, color: '#0066cc', fontWeight: '500' }}>
+                    {formatDistance(alarm.radius_km)}
+                  </Text>
+                </View>
+              </Callout>
+            </Marker>
+            <Circle
+              center={{ latitude: alarm.target_lat, longitude: alarm.target_lng }}
+              radius={alarm.radius_km * 1000}
+              strokeColor="rgba(0, 102, 204, 0.20)"
+              strokeWidth={1}
+              fillColor="rgba(0, 102, 204, 0.06)"
+            />
+          </Fragment>
+        ))}
+
+        {/* 새로 선택한 위치 마커 */}
+        {selected && (
+          <>
+            <Marker
+              coordinate={{ latitude: selected.latitude, longitude: selected.longitude }}
+              pinColor="#0066cc"
+            />
+            <Circle
+              center={{ latitude: selected.latitude, longitude: selected.longitude }}
+              radius={radiusKm * 1000}
+              strokeColor="#0066cc"
+              strokeWidth={2}
+              fillColor="rgba(0, 102, 204, 0.12)"
+            />
+          </>
+        )}
+      </MapView>
+
+      {/* 검색창 */}
+      <View className="absolute left-3 right-3" style={{ top: SEARCH_TOP }}>
+        <View
+          className="flex-row items-center bg-white rounded-full px-4"
+          style={{
+            height: 44,
+            borderWidth: 1,
+            borderColor: 'rgba(0,0,0,0.08)',
+            elevation: 4,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.12,
+            shadowRadius: 8,
+          }}
+        >
+          <Ionicons name="search" size={18} color="#7a7a7a" style={{ marginRight: 8 }} />
+          <TextInput
+            ref={searchInputRef}
+            value={searchText}
+            onChangeText={handleSearchChange}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+            placeholder="장소 검색"
+            placeholderTextColor="#7a7a7a"
+            returnKeyType="search"
+            className="flex-1 text-[17px] text-ink"
+            style={{ paddingVertical: 0 }}
+          />
+          {isSearching && (
+            <ActivityIndicator size="small" color="#0066cc" style={{ marginLeft: 6 }} />
+          )}
+          {searchText.length > 0 && !isSearching && (
+            <TouchableOpacity onPress={clearSearch} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="close-circle" size={18} color="#7a7a7a" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* 검색 결과 드롭다운 */}
+        {showDropdown && (
+          <View
+            className="mt-2 bg-white overflow-hidden"
+            style={{
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: '#e0e0e0',
+              elevation: 8,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.12,
+              shadowRadius: 12,
+            }}
+          >
+            {searchResults.length === 0 && !isSearching ? (
+              <View className="py-4 items-center">
+                <Text className="text-sm text-ink-muted">검색 결과가 없습니다</Text>
+              </View>
+            ) : (
+              searchResults.map((place, index) => (
+                <TouchableOpacity
+                  key={`${place.place_name}-${index}`}
+                  onPress={() => handleSelectPlace(place)}
+                  className="px-4 py-3 active:bg-parchment"
+                  style={
+                    index < searchResults.length - 1
+                      ? { borderBottomWidth: 1, borderBottomColor: '#e0e0e0' }
+                      : undefined
+                  }
+                >
+                  <Text className="text-[15px] font-medium text-ink" numberOfLines={1}>
+                    {place.place_name}
+                  </Text>
+                  <Text className="text-[13px] text-ink-muted mt-0.5" numberOfLines={1}>
+                    {place.road_address_name || place.address_name}
+                  </Text>
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
+        )}
+      </View>
+
+      {/* 탭 안내 */}
+      {!panelVisible && !isSearchFocused && (
+        <View
+          className="absolute self-center bg-tile-dark px-5 py-2.5 rounded-full"
+          style={{ top: SEARCH_TOP + 52 }}
+        >
+          <Text className="text-white text-sm font-medium">
+            📍 지도를 탭해서 목적지를 설정하세요
+          </Text>
+        </View>
+      )}
+
+      {/* 내 위치 버튼 */}
+      <TouchableOpacity
+        onPress={handleMyLocation}
+        className="absolute right-4 w-11 h-11 rounded-full items-center justify-center"
+        style={{
+          top: SEARCH_TOP + 52,
+          backgroundColor: 'rgba(210,210,215,0.64)',
+        }}
+      >
+        <Ionicons name="navigate" size={20} color="#0066cc" />
       </TouchableOpacity>
-    </SafeAreaView>
+
+      {/* 바텀 패널 */}
+      {panelVisible && (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="absolute bottom-0 left-0 right-0"
+        >
+          <Animated.View
+            className="bg-canvas rounded-t-3xl"
+            style={{
+              transform: [{ translateY: panelTranslateY }],
+              elevation: 16,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.12,
+              shadowRadius: 12,
+            }}
+          >
+            {/* 드래그 핸들 */}
+            <View className="items-center pt-3 pb-1">
+              <View className="w-10 h-1 rounded-full bg-hairline" />
+            </View>
+
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
+            >
+              {/* 헤더 */}
+              <View className="flex-row items-center justify-between mb-4 mt-1">
+                <Text className="text-lg font-semibold text-ink">알람 설정</Text>
+                <TouchableOpacity onPress={hidePanel} className="p-1">
+                  <Ionicons name="close" size={22} color="#7a7a7a" />
+                </TouchableOpacity>
+              </View>
+
+              {/* 누구를 위한 알람인지 선택 (로그인 시만 표시) */}
+              {profile && (
+                <View className="mb-4">
+                  <View className="flex-row bg-parchment rounded-full p-1">
+                    <TouchableOpacity
+                      onPress={() => { setIsForFriend(false); setSelectedFriend(null); }}
+                      className={`flex-1 py-2 rounded-full items-center ${!isForFriend ? 'bg-canvas' : ''}`}
+                      style={!isForFriend ? { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 } : undefined}
+                    >
+                      <Text className={`text-[14px] font-medium ${!isForFriend ? 'text-ink' : 'text-ink-muted'}`}>
+                        내 알람
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setIsForFriend(true);
+                        setSelectedFriend(null);
+                        fetchAcceptedFriends();
+                      }}
+                      className={`flex-1 py-2 rounded-full items-center ${isForFriend ? 'bg-canvas' : ''}`}
+                      style={isForFriend ? { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 } : undefined}
+                    >
+                      <Text className={`text-[14px] font-medium ${isForFriend ? 'text-ink' : 'text-ink-muted'}`}>
+                        친구 알람
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* 친구 선택 목록 */}
+                  {isForFriend && (
+                    <View className="mt-3">
+                      {loadingAccepted ? (
+                        <View className="py-4 items-center">
+                          <ActivityIndicator color="#0066cc" />
+                        </View>
+                      ) : acceptedFriends.length === 0 ? (
+                        <View className="bg-parchment border border-hairline rounded-[18px] p-4">
+                          <Text className="text-[13px] text-ink-muted text-center leading-5">
+                            알람 권한을 수락한 친구가 없습니다{'\n'}친구 화면에서 먼저 권한을 요청하세요
+                          </Text>
+                        </View>
+                      ) : (
+                        <View className="bg-parchment border border-hairline rounded-[18px] overflow-hidden">
+                          {acceptedFriends.map((friend, index) => (
+                            <TouchableOpacity
+                              key={friend.profile.id}
+                              onPress={() => setSelectedFriend(friend.profile)}
+                              className="flex-row items-center px-4 py-3 active:bg-hairline"
+                              style={index < acceptedFriends.length - 1 ? { borderBottomWidth: 1, borderBottomColor: '#e0e0e0' } : undefined}
+                            >
+                              <View className="w-8 h-8 rounded-full bg-canvas border border-hairline items-center justify-center mr-3">
+                                <Text className="text-[13px] font-semibold text-primary">
+                                  {friend.profile.nickname.charAt(0).toUpperCase()}
+                                </Text>
+                              </View>
+                              <Text className="text-[15px] text-ink flex-1" numberOfLines={1}>
+                                {friend.profile.nickname}
+                              </Text>
+                              {selectedFriend?.id === friend.profile.id && (
+                                <Ionicons name="checkmark-circle" size={20} color="#0066cc" />
+                              )}
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* 주소 */}
+              <View className="flex-row items-start bg-parchment rounded-[18px] p-3 mb-4">
+                <Ionicons
+                  name="location-sharp"
+                  size={18}
+                  color="#0066cc"
+                  style={{ marginRight: 8, marginTop: 2 }}
+                />
+                <View className="flex-1">
+                  <Text className="text-xs text-ink-muted mb-0.5">목적지</Text>
+                  {geocoding ? (
+                    <ActivityIndicator size="small" color="#0066cc" />
+                  ) : (
+                    <Text className="text-sm text-ink font-medium" numberOfLines={2}>
+                      {selected?.address}
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              {/* 알람 이름 */}
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-ink mb-2">
+                  알람 이름{' '}
+                  <Text className="font-normal text-ink-muted">(선택)</Text>
+                </Text>
+                <TextInput
+                  value={label}
+                  onChangeText={setLabel}
+                  placeholder="예: 회사, 집, 강남역"
+                  placeholderTextColor="#7a7a7a"
+                  returnKeyType="done"
+                  onSubmitEditing={Keyboard.dismiss}
+                  className="bg-parchment border border-hairline rounded-[18px] px-4 py-3 text-[17px] text-ink"
+                />
+              </View>
+
+              {/* 반경 선택 */}
+              <View className="mb-5">
+                <View className="flex-row justify-between mb-2.5">
+                  <Text className="text-sm font-semibold text-ink">알람 반경</Text>
+                  <Text className="text-sm font-semibold text-primary">{formatDistance(radiusKm)}</Text>
+                </View>
+                <View className="flex-row flex-wrap gap-2">
+                  {RADIUS_PRESETS.map((preset) => {
+                    const active = radiusKm === preset.value;
+                    return (
+                      <TouchableOpacity
+                        key={preset.value}
+                        onPress={() => setRadiusKm(preset.value)}
+                        className={`px-3.5 py-1.5 rounded-full active:scale-95 ${
+                          active ? 'bg-primary' : 'bg-parchment border border-hairline'
+                        }`}
+                      >
+                        <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-ink-muted'}`}>
+                          {preset.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* 알람음 설정 */}
+              <View className="mb-5">
+                <Text className="text-sm font-semibold text-ink mb-2">알람음</Text>
+                <View className="flex-row bg-parchment rounded-full p-1 mb-3">
+                  <TouchableOpacity
+                    onPress={() => { setSoundType('default'); clearRecording(); }}
+                    className={`flex-1 py-2 rounded-full items-center ${soundType === 'default' ? 'bg-canvas' : ''}`}
+                    style={soundType === 'default' ? { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 } : undefined}
+                  >
+                    <Text className={`text-[14px] font-medium ${soundType === 'default' ? 'text-ink' : 'text-ink-muted'}`}>
+                      기본 알람음
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setSoundType('custom')}
+                    className={`flex-1 py-2 rounded-full items-center ${soundType === 'custom' ? 'bg-canvas' : ''}`}
+                    style={soundType === 'custom' ? { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 } : undefined}
+                  >
+                    <Text className={`text-[14px] font-medium ${soundType === 'custom' ? 'text-ink' : 'text-ink-muted'}`}>
+                      내 목소리로 녹음
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {soundType === 'custom' && (
+                  <View className="bg-parchment border border-hairline rounded-[18px] p-4">
+                    {!recordingUri ? (
+                      <View className="items-center">
+                        <Pressable
+                          onPressIn={startRecording}
+                          onPressOut={stopRecording}
+                          style={({ pressed }) => ({
+                            width: 72,
+                            height: 72,
+                            borderRadius: 36,
+                            backgroundColor: isRecording ? '#EF4444' : '#0066cc',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: 10,
+                            opacity: pressed ? 0.85 : 1,
+                          })}
+                        >
+                          <Ionicons
+                            name={isRecording ? 'stop' : 'mic'}
+                            size={32}
+                            color="#fff"
+                          />
+                        </Pressable>
+                        <Text className="text-[13px] text-ink-muted text-center leading-5">
+                          {isRecording
+                            ? '녹음 중... 버튼에서 손 떼면 저장'
+                            : '버튼을 누르는 동안 녹음됩니다'}
+                        </Text>
+                      </View>
+                    ) : (
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center flex-1">
+                          <Ionicons name="musical-notes" size={20} color="#0066cc" />
+                          <Text className="ml-2 text-sm text-ink font-medium">
+                            녹음 완료 ({durationSec}초)
+                          </Text>
+                        </View>
+                        <View className="flex-row gap-2">
+                          <TouchableOpacity
+                            onPress={playPreview}
+                            className="w-9 h-9 rounded-full bg-canvas border border-hairline items-center justify-center active:scale-95"
+                          >
+                            <Ionicons
+                              name={isPlaying ? 'pause' : 'play'}
+                              size={18}
+                              color="#0066cc"
+                            />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => clearRecording()}
+                            className="w-9 h-9 rounded-full bg-canvas border border-hairline items-center justify-center active:scale-95"
+                          >
+                            <Ionicons name="refresh" size={18} color="#7a7a7a" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </View>
+
+              {/* 저장 버튼 */}
+              <TouchableOpacity
+                onPress={handleSave}
+                disabled={saving || geocoding || (isForFriend && !selectedFriend) || (soundType === 'custom' && !recordingUri)}
+                className={`rounded-full py-3.5 items-center active:scale-95 ${
+                  saving || geocoding || (isForFriend && !selectedFriend) || (soundType === 'custom' && !recordingUri) ? 'bg-primary/50' : 'bg-primary'
+                }`}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text className="text-white text-[17px] font-semibold">알람 저장하기</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </Animated.View>
+        </KeyboardAvoidingView>
+      )}
+    </View>
   );
 }
