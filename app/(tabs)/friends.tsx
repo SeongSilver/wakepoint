@@ -15,7 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { shareTextTemplate } from '@react-native-kakao/share';
 import type { KakaoTextTemplate } from '@react-native-kakao/share';
 import { useFriends, FriendEntry } from '@/hooks/useFriends';
-import { useAlarmPermissions } from '@/hooks/useAlarmPermissions';
+import {
+  useAlarmPermissions,
+  ReceivedPermissionRequest,
+} from '@/hooks/useAlarmPermissions';
 import { useUserStore } from '@/store/userStore';
 import { UserProfile } from '@/types';
 
@@ -23,6 +26,45 @@ const STORE_URL = 'https://play.google.com/store/apps/details?id=com.yourname.wa
 
 function getInitial(nickname: string) {
   return nickname.charAt(0).toUpperCase();
+}
+
+function PermissionBannerItem({
+  request,
+  responding,
+  onRespond,
+}: {
+  request: ReceivedPermissionRequest;
+  responding: boolean;
+  onRespond: (id: string, status: 'accepted' | 'rejected') => void;
+}) {
+  return (
+    <View className="mb-2 last:mb-0">
+      <Text className="text-[14px] text-ink mb-2" numberOfLines={2}>
+        <Text className="font-semibold">{request.requesterProfile.nickname}</Text>
+        {'님이 알람 권한을 요청했습니다'}
+      </Text>
+      <View className="flex-row gap-2">
+        <TouchableOpacity
+          onPress={() => onRespond(request.id, 'accepted')}
+          disabled={responding}
+          className="flex-1 bg-primary rounded-full py-2 items-center active:scale-95"
+        >
+          {responding ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text className="text-[13px] font-semibold text-white">수락</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => onRespond(request.id, 'rejected')}
+          disabled={responding}
+          className="flex-1 bg-canvas border border-hairline rounded-full py-2 items-center active:scale-95"
+        >
+          <Text className="text-[13px] font-semibold text-ink-muted">거절</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 }
 
 export default function FriendsScreen() {
@@ -44,9 +86,13 @@ export default function FriendsScreen() {
   } = useFriends();
 
   const {
+    receivedPending,
+    respondingId,
     requestingId,
     fetchSentRequests,
+    fetchReceivedPending,
     requestPermission,
+    respondToRequest,
     getSentStatus,
   } = useAlarmPermissions();
 
@@ -58,8 +104,9 @@ export default function FriendsScreen() {
     if (profile?.id) {
       fetchFriends();
       fetchSentRequests();
+      fetchReceivedPending();
     }
-  }, [profile?.id, fetchFriends, fetchSentRequests]);
+  }, [profile?.id, fetchFriends, fetchSentRequests, fetchReceivedPending]);
 
   const handleSearch = useCallback(() => {
     const trimmed = emailInput.trim();
@@ -91,7 +138,10 @@ export default function FriendsScreen() {
     }
   }, [addFriend]);
 
-  const handleRequestPermission = useCallback(async (targetId: string, targetPushToken?: string) => {
+  const handleRequestPermission = useCallback(async (
+    targetId: string,
+    targetPushToken?: string,
+  ) => {
     try {
       await requestPermission(targetId, targetPushToken);
     } catch (err) {
@@ -132,7 +182,6 @@ export default function FriendsScreen() {
       const template: KakaoTextTemplate = {
         text: '다왔어 앱에서 같이 위치 알람 써봐!\n목적지에 가까워지면 알람이 울려요. 나를 친구 추가하면 대신 알람 설정도 해줄 수 있어요!',
         link: {
-          // 카카오 개발자 콘솔 > 플랫폼 > Android에 dawasseo://invite 등록 필요
           androidExecutionParams: { from: profile.id },
           iosExecutionParams: { from: profile.id },
           mobileWebUrl: STORE_URL,
@@ -145,10 +194,8 @@ export default function FriendsScreen() {
           },
         ],
       };
-
       await shareTextTemplate({ template, useWebBrowserIfKakaoTalkNotAvailable: false });
     } catch {
-      // 카카오톡 미설치 시 일반 공유로 fallback
       try {
         await Share.share({
           message: `다왔어 앱에서 같이 위치 알람 써봐!\n설치 링크: ${STORE_URL}`,
@@ -237,7 +284,9 @@ export default function FriendsScreen() {
           {permStatus === 'accepted' && (
             <View className="flex-row items-center bg-parchment border border-hairline rounded-full px-3 py-1.5">
               <Ionicons name="checkmark-circle-outline" size={13} color="#22c55e" />
-              <Text className="text-[12px] font-medium ml-1" style={{ color: '#22c55e' }}>권한 허용됨</Text>
+              <Text className="text-[12px] font-medium ml-1" style={{ color: '#22c55e' }}>
+                권한 허용됨
+              </Text>
             </View>
           )}
           {permStatus === 'rejected' && (
@@ -253,28 +302,11 @@ export default function FriendsScreen() {
 
   const ListHeader = (
     <View>
-      {/* 카카오톡 초대 버튼 */}
-      <TouchableOpacity
-        onPress={handleKakaoInvite}
-        disabled={inviting}
-        className={`flex-row items-center justify-center bg-kakao rounded-full py-3.5 mb-4 active:scale-95 ${inviting ? 'opacity-60' : ''}`}
-      >
-        {inviting ? (
-          <ActivityIndicator color="#000000" />
-        ) : (
-          <>
-            <Text className="text-lg mr-2">💬</Text>
-            <Text className="text-black font-semibold text-[17px]">카카오톡으로 초대</Text>
-          </>
-        )}
-      </TouchableOpacity>
-
       {/* 검색 카드 */}
       <View className="bg-canvas border border-hairline rounded-[18px] p-4 mb-5">
         <Text className="text-[15px] font-semibold text-ink mb-3">이메일로 친구 추가</Text>
 
         <View className="flex-row items-center gap-2">
-          {/* 이메일 입력 */}
           <View className="flex-1 flex-row items-center bg-parchment rounded-full h-11 px-4">
             <TextInput
               ref={inputRef}
@@ -301,7 +333,6 @@ export default function FriendsScreen() {
             )}
           </View>
 
-          {/* 검색 버튼 */}
           <TouchableOpacity
             onPress={handleSearch}
             disabled={searching || !emailInput.trim()}
@@ -323,14 +354,12 @@ export default function FriendsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 에러 메시지 */}
         {searchError && (
           <View className="mt-3 py-2 px-1">
             <Text className="text-[13px] text-ink-muted text-center">{searchError}</Text>
           </View>
         )}
 
-        {/* 검색 결과 */}
         {searchResult && (
           <View className="mt-3 flex-row items-center bg-parchment rounded-xl p-3">
             <View className="w-10 h-10 rounded-full bg-canvas border border-hairline items-center justify-center mr-3">
@@ -399,15 +428,58 @@ export default function FriendsScreen() {
         <Text className="text-[28px] font-semibold text-ink">친구</Text>
       </View>
 
+      {/* 수신된 알람 권한 요청 배너 */}
+      {receivedPending.length > 0 && (
+        <View className="mx-4 mb-2 bg-canvas border border-hairline rounded-[18px] p-4">
+          <View className="flex-row items-center mb-3">
+            <Ionicons name="notifications-outline" size={16} color="#0066cc" />
+            <Text className="text-[13px] font-semibold text-primary ml-1.5">
+              알람 권한 요청 {receivedPending.length}건
+            </Text>
+          </View>
+          {receivedPending.map((req, index) => (
+            <View key={req.id}>
+              {index > 0 && <View className="border-t border-hairline my-2" />}
+              <PermissionBannerItem
+                request={req}
+                responding={respondingId === req.id}
+                onRespond={respondToRequest}
+              />
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* 친구 목록 */}
       <FlatList
         data={friends}
         keyExtractor={(item) => item.rowId}
         renderItem={renderFriendItem}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={ListHeader}
         ListEmptyComponent={ListEmpty}
       />
+
+      {/* 카카오톡 초대 버튼 (하단 고정) */}
+      <View
+        className="px-5 py-3 bg-parchment border-t border-hairline"
+      >
+        <TouchableOpacity
+          onPress={handleKakaoInvite}
+          disabled={inviting}
+          className={`flex-row items-center justify-center bg-kakao rounded-full py-3.5 active:scale-95 ${inviting ? 'opacity-60' : ''}`}
+        >
+          {inviting ? (
+            <ActivityIndicator color="#000000" />
+          ) : (
+            <>
+              <Text className="text-lg mr-2">💬</Text>
+              <Text className="text-black font-semibold text-[17px]">카카오톡으로 초대</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
