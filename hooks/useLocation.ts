@@ -31,7 +31,7 @@ export function useLocation() {
       }
     };
     sync();
-    const interval = setInterval(sync, 5000);
+    const interval = setInterval(sync, 30_000);
     return () => {
       mounted = false;
       clearInterval(interval);

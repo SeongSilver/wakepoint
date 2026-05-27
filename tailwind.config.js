@@ -9,8 +9,9 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary:      '#0066cc',  // only accent
-        'primary-dk': '#2997ff',  // primary on dark tiles
+        primary:      '#4F46E5',  // only accent — indigo
+        'primary-dk': '#818cf8',  // primary on dark tiles — indigo light
+        success:      '#10B981',  // active alarm, accepted state
         canvas:       '#ffffff',
         parchment:    '#f5f5f7',  // canvas-parchment
         pearl:        '#fafafc',  // surface-pearl

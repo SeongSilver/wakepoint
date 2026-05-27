@@ -19,11 +19,10 @@ import { useRecording } from '@/hooks/useRecording';
 import MapView, { Marker, Circle, Callout, MapPressEvent, PoiClickEvent, Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { router } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 import { useAlarmStore } from '@/store/alarmStore';
 import { useUserStore } from '@/store/userStore';
 import { useAlarmPermissions } from '@/hooks/useAlarmPermissions';
-import { useFriendAlarmListener } from '@/hooks/useFriendAlarmListener';
 import { validateRadius, formatDistance } from '@/lib/location';
 import { supabase } from '@/lib/supabase';
 import { sendFcmToUser } from '@/lib/firebase';
@@ -107,7 +106,6 @@ export default function HomeScreen() {
   const activeAlarms = useAlarmStore((s) => s.activeAlarms);
   const profile = useUserStore((s) => s.profile);
 
-  useFriendAlarmListener();
   const { acceptedFriends, loadingAccepted, fetchAcceptedFriends } = useAlarmPermissions();
 
   const showPanel = useCallback(() => {
@@ -386,6 +384,7 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1">
+      <Tabs.Screen options={{ tabBarStyle: panelVisible ? { display: 'none' } : undefined }} />
       {/* 지도 */}
       <MapView
         ref={mapRef}
@@ -393,7 +392,7 @@ export default function HomeScreen() {
         initialRegion={SEOUL_REGION}
         onPress={handleMapPress}
         onPoiClick={handlePoiClick}
-        showsUserLocation
+        showsUserLocation={activeAlarms.length > 0}
         showsMyLocationButton={false}
         toolbarEnabled={false}
       >
@@ -419,7 +418,7 @@ export default function HomeScreen() {
                       {alarm.target_address}
                     </Text>
                   ) : null}
-                  <Text style={{ fontSize: 12, color: '#0066cc', fontWeight: '500' }}>
+                  <Text style={{ fontSize: 12, color: '#4F46E5', fontWeight: '500' }}>
                     {formatDistance(alarm.radius_km)}
                   </Text>
                 </View>
@@ -428,9 +427,9 @@ export default function HomeScreen() {
             <Circle
               center={{ latitude: alarm.target_lat, longitude: alarm.target_lng }}
               radius={alarm.radius_km * 1000}
-              strokeColor="rgba(0, 102, 204, 0.20)"
+              strokeColor="rgba(79, 70, 229, 0.20)"
               strokeWidth={1}
-              fillColor="rgba(0, 102, 204, 0.06)"
+              fillColor="rgba(79, 70, 229, 0.06)"
             />
           </Fragment>
         ))}
@@ -440,14 +439,14 @@ export default function HomeScreen() {
           <>
             <Marker
               coordinate={{ latitude: selected.latitude, longitude: selected.longitude }}
-              pinColor="#0066cc"
+              pinColor="#4F46E5"
             />
             <Circle
               center={{ latitude: selected.latitude, longitude: selected.longitude }}
               radius={radiusKm * 1000}
-              strokeColor="#0066cc"
+              strokeColor="#4F46E5"
               strokeWidth={2}
-              fillColor="rgba(0, 102, 204, 0.12)"
+              fillColor="rgba(79, 70, 229, 0.12)"
             />
           </>
         )}
@@ -482,7 +481,7 @@ export default function HomeScreen() {
             style={{ paddingVertical: 0 }}
           />
           {isSearching && (
-            <ActivityIndicator size="small" color="#0066cc" style={{ marginLeft: 6 }} />
+            <ActivityIndicator size="small" color="#4F46E5" style={{ marginLeft: 6 }} />
           )}
           {searchText.length > 0 && !isSearching && (
             <TouchableOpacity onPress={clearSearch} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -538,11 +537,12 @@ export default function HomeScreen() {
       {/* 탭 안내 */}
       {!panelVisible && !isSearchFocused && (
         <View
-          className="absolute self-center bg-tile-dark px-5 py-2.5 rounded-full"
-          style={{ top: SEARCH_TOP + 52 }}
+          className="absolute self-center bg-tile-dark px-5 py-2.5 rounded-full flex-row items-center"
+          style={{ top: SEARCH_TOP + 52, gap: 6 }}
         >
+          <Ionicons name="location-sharp" size={13} color="#ffffff" />
           <Text className="text-white text-sm font-medium">
-            📍 지도를 탭해서 목적지를 설정하세요
+            지도를 탭해서 목적지를 설정하세요
           </Text>
         </View>
       )}
@@ -556,7 +556,7 @@ export default function HomeScreen() {
           backgroundColor: 'rgba(210,210,215,0.64)',
         }}
       >
-        <Ionicons name="navigate" size={20} color="#0066cc" />
+        <Ionicons name="navigate" size={20} color="#4F46E5" />
       </TouchableOpacity>
 
       {/* 바텀 패널 */}
@@ -626,16 +626,16 @@ export default function HomeScreen() {
                     <View className="mt-3">
                       {loadingAccepted ? (
                         <View className="py-4 items-center">
-                          <ActivityIndicator color="#0066cc" />
+                          <ActivityIndicator color="#4F46E5" />
                         </View>
                       ) : acceptedFriends.length === 0 ? (
-                        <View className="bg-parchment border border-hairline rounded-[18px] p-4">
+                        <View className="bg-parchment border border-hairline rounded-2xl p-4">
                           <Text className="text-[13px] text-ink-muted text-center leading-5">
                             알람 권한을 수락한 친구가 없습니다{'\n'}친구 화면에서 먼저 권한을 요청하세요
                           </Text>
                         </View>
                       ) : (
-                        <View className="bg-parchment border border-hairline rounded-[18px] overflow-hidden">
+                        <View className="bg-parchment border border-hairline rounded-2xl overflow-hidden">
                           {acceptedFriends.map((friend, index) => (
                             <TouchableOpacity
                               key={friend.profile.id}
@@ -652,7 +652,7 @@ export default function HomeScreen() {
                                 {friend.profile.nickname}
                               </Text>
                               {selectedFriend?.id === friend.profile.id && (
-                                <Ionicons name="checkmark-circle" size={20} color="#0066cc" />
+                                <Ionicons name="checkmark-circle" size={20} color="#4F46E5" />
                               )}
                             </TouchableOpacity>
                           ))}
@@ -664,17 +664,17 @@ export default function HomeScreen() {
               )}
 
               {/* 주소 */}
-              <View className="flex-row items-start bg-parchment rounded-[18px] p-3 mb-4">
+              <View className="flex-row items-start bg-parchment rounded-2xl p-3 mb-4">
                 <Ionicons
                   name="location-sharp"
                   size={18}
-                  color="#0066cc"
+                  color="#4F46E5"
                   style={{ marginRight: 8, marginTop: 2 }}
                 />
                 <View className="flex-1">
                   <Text className="text-xs text-ink-muted mb-0.5">목적지</Text>
                   {geocoding ? (
-                    <ActivityIndicator size="small" color="#0066cc" />
+                    <ActivityIndicator size="small" color="#4F46E5" />
                   ) : (
                     <Text className="text-sm text-ink font-medium" numberOfLines={2}>
                       {selected?.address}
@@ -751,7 +751,7 @@ export default function HomeScreen() {
                 </View>
 
                 {soundType === 'custom' && (
-                  <View className="bg-parchment border border-hairline rounded-[18px] p-4">
+                  <View className="bg-parchment border border-hairline rounded-2xl p-4">
                     {!recordingUri ? (
                       <View className="items-center">
                         <Pressable
@@ -761,7 +761,7 @@ export default function HomeScreen() {
                             width: 72,
                             height: 72,
                             borderRadius: 36,
-                            backgroundColor: isRecording ? '#EF4444' : '#0066cc',
+                            backgroundColor: isRecording ? '#EF4444' : '#4F46E5',
                             alignItems: 'center',
                             justifyContent: 'center',
                             marginBottom: 10,
@@ -783,7 +783,7 @@ export default function HomeScreen() {
                     ) : (
                       <View className="flex-row items-center justify-between">
                         <View className="flex-row items-center flex-1">
-                          <Ionicons name="musical-notes" size={20} color="#0066cc" />
+                          <Ionicons name="musical-notes" size={20} color="#4F46E5" />
                           <Text className="ml-2 text-sm text-ink font-medium">
                             녹음 완료 ({durationSec}초)
                           </Text>
@@ -796,7 +796,7 @@ export default function HomeScreen() {
                             <Ionicons
                               name={isPlaying ? 'pause' : 'play'}
                               size={18}
-                              color="#0066cc"
+                              color="#4F46E5"
                             />
                           </TouchableOpacity>
                           <TouchableOpacity

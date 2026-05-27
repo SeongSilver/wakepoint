@@ -228,7 +228,7 @@ export default function FriendsScreen() {
     const isRequesting = requestingId === item.profile.id;
 
     return (
-      <View className="bg-canvas border border-hairline rounded-[18px] px-4 py-3 mb-3">
+      <View className="bg-canvas border border-hairline rounded-2xl px-4 py-3 mb-3">
         <View className="flex-row items-center">
           <View className="w-11 h-11 rounded-full bg-parchment items-center justify-center mr-3">
             <Text className="text-[17px] font-semibold text-primary">
@@ -266,10 +266,10 @@ export default function FriendsScreen() {
               className="flex-row items-center bg-parchment border border-hairline rounded-full px-3 py-1.5 active:scale-95"
             >
               {isRequesting ? (
-                <ActivityIndicator size="small" color="#0066cc" />
+                <ActivityIndicator size="small" color="#4F46E5" />
               ) : (
                 <>
-                  <Ionicons name="notifications-outline" size={13} color="#0066cc" />
+                  <Ionicons name="notifications-outline" size={13} color="#4F46E5" />
                   <Text className="text-[12px] font-medium text-primary ml-1">알람 권한 요청</Text>
                 </>
               )}
@@ -283,8 +283,8 @@ export default function FriendsScreen() {
           )}
           {permStatus === 'accepted' && (
             <View className="flex-row items-center bg-parchment border border-hairline rounded-full px-3 py-1.5">
-              <Ionicons name="checkmark-circle-outline" size={13} color="#22c55e" />
-              <Text className="text-[12px] font-medium ml-1" style={{ color: '#22c55e' }}>
+              <Ionicons name="checkmark-circle-outline" size={13} color="#10B981" />
+              <Text className="text-[12px] font-medium text-success ml-1">
                 권한 허용됨
               </Text>
             </View>
@@ -303,7 +303,7 @@ export default function FriendsScreen() {
   const ListHeader = (
     <View>
       {/* 검색 카드 */}
-      <View className="bg-canvas border border-hairline rounded-[18px] p-4 mb-5">
+      <View className="bg-canvas border border-hairline rounded-2xl p-4 mb-5">
         <Text className="text-[15px] font-semibold text-ink mb-3">이메일로 친구 추가</Text>
 
         <View className="flex-row items-center gap-2">
@@ -404,7 +404,7 @@ export default function FriendsScreen() {
             <Text className="font-normal text-ink-muted">{friends.length}명</Text>
           )}
         </Text>
-        {loading && <ActivityIndicator size="small" color="#0066cc" />}
+        {loading && <ActivityIndicator size="small" color="#4F46E5" />}
       </View>
     </View>
   );
@@ -430,9 +430,9 @@ export default function FriendsScreen() {
 
       {/* 수신된 알람 권한 요청 배너 */}
       {receivedPending.length > 0 && (
-        <View className="mx-4 mb-2 bg-canvas border border-hairline rounded-[18px] p-4">
+        <View className="mx-4 mb-2 bg-canvas border border-hairline rounded-2xl p-4">
           <View className="flex-row items-center mb-3">
-            <Ionicons name="notifications-outline" size={16} color="#0066cc" />
+            <Ionicons name="notifications-outline" size={16} color="#4F46E5" />
             <Text className="text-[13px] font-semibold text-primary ml-1.5">
               알람 권한 요청 {receivedPending.length}건
             </Text>
@@ -474,7 +474,7 @@ export default function FriendsScreen() {
             <ActivityIndicator color="#000000" />
           ) : (
             <>
-              <Text className="text-lg mr-2">💬</Text>
+              <Ionicons name="chatbubble-ellipses" size={18} color="#000000" style={{ marginRight: 8 }} />
               <Text className="text-black font-semibold text-[17px]">카카오톡으로 초대</Text>
             </>
           )}

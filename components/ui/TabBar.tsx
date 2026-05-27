@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, type ViewStyle } from 'react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,8 +18,12 @@ const TAB_CONFIG: Record<string, TabConfig> = {
 // 스크린 콘텐츠의 paddingBottom 계산에 사용
 export const TAB_BAR_HEIGHT = 72;
 
-export default function TabBar({ state, navigation }: BottomTabBarProps) {
+export default function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+
+  const focusedOptions = descriptors[state.routes[state.index].key].options;
+  const tabBarStyle = focusedOptions.tabBarStyle as ViewStyle | undefined;
+  if (tabBarStyle?.display === 'none') return null;
 
   return (
     <View
@@ -68,7 +72,7 @@ export default function TabBar({ state, navigation }: BottomTabBarProps) {
             {/* 활성 탭 pill 배경 */}
             <View
               style={{
-                backgroundColor: focused ? '#0066cc' : 'transparent',
+                backgroundColor: focused ? '#4F46E5' : 'transparent',
                 borderRadius: 12,
                 width: 48,
                 height: 30,
@@ -87,7 +91,7 @@ export default function TabBar({ state, navigation }: BottomTabBarProps) {
               style={{
                 fontSize: 11,
                 fontWeight: focused ? '600' : '400',
-                color: focused ? '#0066cc' : '#7a7a7a',
+                color: focused ? '#4F46E5' : '#7a7a7a',
                 letterSpacing: -0.1,
               }}
             >

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import {
   View,
   Text,
+  Image,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
@@ -117,7 +118,11 @@ export default function SignupScreen() {
         <View className="flex-1 justify-center px-6 py-12">
           {/* 헤더 */}
           <View className="items-center mb-10">
-            <Text className="text-4xl font-semibold tracking-tight text-primary">다왔어</Text>
+            <Image
+              source={require('../../assets/images/logo-basic.png')}
+              className="w-52 h-14"
+              resizeMode="contain"
+            />
             <Text className="text-sm text-ink-muted mt-2">계정을 만들어 시작해보세요</Text>
           </View>
 

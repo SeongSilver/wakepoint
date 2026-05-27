@@ -9,9 +9,15 @@
 ### Accent
 | Token | Hex | Use |
 |---|---|---|
-| `primary` | `#0066cc` | Every interactive element — links, CTAs, focus signals. The ONLY accent color. |
-| `primary-focus` | `#0071e3` | Keyboard focus ring on buttons (`outline: 2px solid`) |
-| `primary-on-dark` | `#2997ff` | Links on dark tiles only — Action Blue disappears on dark surfaces |
+| `primary` | `#4F46E5` | Every interactive element — links, CTAs, focus signals. The ONLY accent color. |
+| `primary-focus` | `#6366f1` | Keyboard focus ring on buttons (`outline: 2px solid`) |
+| `primary-on-dark` | `#818cf8` | Links on dark tiles only |
+
+### Status
+| Token | Hex | Use |
+|---|---|---|
+| `success` | `#10B981` | Active alarm state, accepted permission |
+| `danger` | `#ef4444` | Destructive actions, errors |
 
 ### Surfaces
 | Token | Hex | Use |
@@ -41,9 +47,9 @@
 | `hairline` | `#e0e0e0` | Store utility cards, configurator chips |
 
 **Rules:**
-- `primary` (#0066cc) is the ONLY accent — never introduce a second color
+- `primary` (#4F46E5) is the ONLY accent — never introduce a second color
 - `surface-black` appears only in global nav and video backgrounds
-- `primary-on-dark` (#2997ff) is for dark tiles only; never use on light surfaces
+- `primary-on-dark` (#818cf8) is for dark tiles only; never use on light surfaces
 
 ---
 
@@ -120,7 +126,7 @@ font-family: Inter, system-ui, sans-serif;
 | `xs` | 5px | Subtle inline chips (rare) |
 | `sm` | 8px | Dark utility buttons, inline card imagery |
 | `md` | 11px | Pearl Button capsules |
-| `lg` | 18px | Store/accessories grid cards |
+| `lg` | 16px (`rounded-2xl`) | Store/accessories grid cards |
 | `pill` | 9999px | Primary blue CTAs, configurator chips, search input |
 | `full` | 50% | Circular control chips over photography |
 
@@ -170,20 +176,20 @@ Right:       nav links (button-utility 14px) + button-primary CTA
 
 **button-primary** — Signature action
 ```css
-background:    #0066cc;
+background:    #4F46E5;
 color:         #ffffff;
 font:          17px / 400 SF Pro Text;
 border-radius: 9999px;          /* pill */
 padding:       11px 22px;
 /* Active */ transform: scale(0.95);
-/* Focus  */ outline: 2px solid #0071e3;
+/* Focus  */ outline: 2px solid #6366f1;
 ```
 
 **button-secondary-pill** — Ghost pill CTA
 ```css
 background:    transparent;
-color:         #0066cc;
-border:        1px solid #0066cc;
+color:         #4F46E5;
+border:        1px solid #4F46E5;
 border-radius: 9999px;
 padding:       11px 22px;
 ```
@@ -232,7 +238,7 @@ Stack:        display-lg headline → lead tagline → 2× button-primary → pr
 **Dark tile**
 ```
 Background:   #272729
-Text:         #ffffff (links: #2997ff)
+Text:         #ffffff (links: #818cf8)
 Padding:      80px vertical
 Border-radius: 0
 ```
@@ -248,7 +254,7 @@ padding:       24px;
 /* Image: 1:1 crop, border-radius: 8px inside */
 /* Name:  body-strong (17px / 600) */
 /* Price: body (17px / 400) */
-/* CTA:   text-link in #0066cc */
+/* CTA:   text-link in #4F46E5 */
 ```
 
 ### Search Input
@@ -301,11 +307,11 @@ padding:       12px 32px;
 
 | ✅ Do | ❌ Don't |
 |---|---|
-| Single accent `#0066cc` for every interactive element | Introduce a second accent color |
+| Single accent `#4F46E5` for every interactive element | Introduce a second accent color |
 | Negative letter-spacing on headlines (17px+) | Use gradients as decorative backgrounds |
 | Body copy at 17px / 400 / lh 1.47 | Set body at 16px or weight 500 |
 | Alternate light ↔ dark tiles for section rhythm | Add shadows to cards, buttons, or text |
 | `pill` radius for primary CTAs only | Use pill radius on utility cards |
 | Product shadow only on product renders | Round full-bleed tiles |
-| `transform: scale(0.95)` on all button active states | Use `primary-on-dark` (#2997ff) on light surfaces |
+| `transform: scale(0.95)` on all button active states | Use `primary-on-dark` (#818cf8) on light surfaces |
 | Global nav stays `surface-black` (#000000) | Tighten body line-height below 1.47 |

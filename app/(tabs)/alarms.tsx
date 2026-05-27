@@ -24,7 +24,7 @@ const RINGING_KEY = 'wakepoint-ringing';
 
 function AlarmCard({ alarm, onDelete }: { alarm: Alarm; onDelete: (id: string) => void }) {
   return (
-    <View className="flex-row bg-canvas rounded-[18px] mx-4 mb-3 border border-hairline overflow-hidden">
+    <View className="flex-row bg-canvas rounded-2xl mx-4 mb-3 border border-hairline overflow-hidden">
       <View className={`w-1 ${alarm.is_active ? 'bg-primary' : 'bg-[#e0e0e0]'}`} />
       <View className="flex-1 p-4">
         <View className="flex-row items-start justify-between">
@@ -101,7 +101,7 @@ function EmptyState() {
   return (
     <View className="flex-1 items-center justify-center px-8">
       <View className="w-24 h-24 rounded-full bg-parchment items-center justify-center mb-2">
-        <Ionicons name="location-outline" size={48} color="#0066cc" />
+        <Ionicons name="location-outline" size={48} color="#4F46E5" />
       </View>
       <Text className="text-2xl font-semibold text-ink mt-6 text-center">
         아직 알람이 없어요
@@ -194,13 +194,13 @@ export default function AlarmsScreen() {
 
       {/* 알람 울리는 중 배너 */}
       {ringingAlarm && (
-        <View className="mx-4 mb-2 bg-canvas border border-hairline rounded-[18px] overflow-hidden">
+        <View className="mx-4 mb-2 bg-canvas border border-hairline rounded-2xl overflow-hidden">
           <View className="flex-row items-center px-4 py-3">
             <View
               className="w-9 h-9 rounded-full items-center justify-center mr-3"
-              style={{ backgroundColor: 'rgba(0,102,204,0.10)' }}
+              style={{ backgroundColor: 'rgba(79,70,229,0.10)' }}
             >
-              <Ionicons name="alarm" size={18} color="#0066cc" />
+              <Ionicons name="alarm" size={18} color="#4F46E5" />
             </View>
             <View className="flex-1">
               <Text className="text-[14px] font-semibold text-primary">알람 울리는 중</Text>
@@ -221,9 +221,9 @@ export default function AlarmsScreen() {
 
       {/* 권한 요청 배너 */}
       {receivedPending.length > 0 && (
-        <View className="mx-4 mb-2 bg-canvas border border-hairline rounded-[18px] p-4">
+        <View className="mx-4 mb-2 bg-canvas border border-hairline rounded-2xl p-4">
           <View className="flex-row items-center mb-3">
-            <Ionicons name="notifications-outline" size={16} color="#0066cc" />
+            <Ionicons name="notifications-outline" size={16} color="#4F46E5" />
             <Text className="text-[13px] font-semibold text-primary ml-1.5">
               알람 권한 요청 {receivedPending.length}건
             </Text>
@@ -261,7 +261,7 @@ export default function AlarmsScreen() {
         className="absolute bottom-24 right-6 w-14 h-14 bg-primary rounded-full items-center justify-center"
         style={{
           elevation: 6,
-          shadowColor: '#0066cc',
+          shadowColor: '#4F46E5',
           shadowOffset: { width: 0, height: 3 },
           shadowOpacity: 0.3,
           shadowRadius: 6,

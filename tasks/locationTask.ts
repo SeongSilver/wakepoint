@@ -76,6 +76,9 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
         .eq('id', alarm.id)
         .then(({ error: dbErr }) => {
           if (dbErr) console.error('[LocationTask] DB update failed:', dbErr.message);
+        })
+        .catch((err: unknown) => {
+          console.error('[LocationTask] Supabase network error:', err);
         });
     }
   }

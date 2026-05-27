@@ -180,7 +180,7 @@ export default function LoginScreen() {
             <ActivityIndicator color="#000000" />
           ) : (
             <>
-              <Text className="text-lg mr-2">💬</Text>
+              <Ionicons name="chatbubble-ellipses" size={18} color="#000000" style={{ marginRight: 8 }} />
               <Text className="text-black font-semibold text-[17px]">카카오로 계속하기</Text>
             </>
           )}
@@ -196,7 +196,7 @@ export default function LoginScreen() {
             <Ionicons
               name={agreedToTerms ? 'checkbox' : 'square-outline'}
               size={22}
-              color={agreedToTerms ? '#0066cc' : '#7a7a7a'}
+              color={agreedToTerms ? '#4F46E5' : '#7a7a7a'}
             />
             <Text className="text-sm text-ink ml-2 flex-1">
               이용약관 및 개인정보처리방침에 동의합니다
