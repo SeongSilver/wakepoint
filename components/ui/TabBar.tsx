@@ -71,14 +71,14 @@ export default function TabBar({ state, navigation, descriptors }: BottomTabBarP
               <Ionicons
                 name={focused ? cfg.iconActive : cfg.icon}
                 size={26}
-                color={focused ? '#818cf8' : '#6b7280'}
+                color={focused ? '#2997ff' : '#7a7a7a'}
                 style={{ marginBottom: 5 }}
               />
             <Text
               style={{
                 fontSize: 12,
                 fontWeight: '400',
-                color: focused ? '#818cf8' : '#6b7280',
+                color: focused ? '#2997ff' : '#7a7a7a',
                 letterSpacing: -0.1,
               }}
             >
