@@ -100,7 +100,7 @@ export default function LoginScreen() {
       <View className="flex-1 justify-center px-6">
         {/* 로고 */}
         <View className="items-center mb-12">
-          <Text className="text-4xl font-semibold text-indigo-600">다왔어</Text>
+          <Text className="text-4xl font-semibold text-[#0066cc]">다왔어</Text>
           <Text className="text-sm text-gray-500 mt-3">
             목적지에 다 왔을 때 알려드려요
           </Text>
@@ -117,7 +117,7 @@ export default function LoginScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
-            className="bg-gray-50 border border-[rgba(0,0,0,0.08)] rounded-xl px-4 py-3 text-[17px] text-ink"
+            className="bg-gray-50 border border-[rgba(0,0,0,0.08)] rounded-[11px] px-4 py-3 text-[17px] text-ink"
           />
         </View>
 
@@ -131,7 +131,7 @@ export default function LoginScreen() {
             placeholderTextColor="#7a7a7a"
             secureTextEntry
             autoComplete="password"
-            className="bg-gray-50 border border-[rgba(0,0,0,0.08)] rounded-xl px-4 py-3 text-[17px] text-ink"
+            className="bg-gray-50 border border-[rgba(0,0,0,0.08)] rounded-[11px] px-4 py-3 text-[17px] text-ink"
           />
         </View>
 
@@ -191,7 +191,7 @@ export default function LoginScreen() {
             <Ionicons
               name={agreedToTerms ? 'checkbox' : 'square-outline'}
               size={22}
-              color={agreedToTerms ? '#4F46E5' : '#7a7a7a'}
+              color={agreedToTerms ? '#0066cc' : '#7a7a7a'}
             />
             <Text className="text-sm text-ink ml-2 flex-1">
               이용약관 및 개인정보처리방침에 동의합니다

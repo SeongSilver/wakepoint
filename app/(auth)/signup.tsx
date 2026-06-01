@@ -117,7 +117,7 @@ export default function SignupScreen() {
         <View className="flex-1 justify-center px-6 py-12">
           {/* 헤더 */}
           <View className="items-center mb-10">
-            <Text className="text-4xl font-semibold text-indigo-600">다왔어</Text>
+            <Text className="text-4xl font-semibold text-[#0066cc]">다왔어</Text>
             <Text className="text-sm text-gray-500 mt-2">계정을 만들어 시작해보세요</Text>
           </View>
 
@@ -135,7 +135,7 @@ export default function SignupScreen() {
               autoCapitalize="none"
               returnKeyType="next"
               onSubmitEditing={() => emailRef.current?.focus()}
-              className={`bg-gray-50 border rounded-xl px-4 py-3 text-[17px] text-ink ${
+              className={`bg-gray-50 border rounded-[11px] px-4 py-3 text-[17px] text-ink ${
                 fieldErrors.nickname ? 'border-red-500' : 'border-[rgba(0,0,0,0.08)]'
               }`}
             />
@@ -161,7 +161,7 @@ export default function SignupScreen() {
               autoComplete="email"
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
-              className={`bg-gray-50 border rounded-xl px-4 py-3 text-[17px] text-ink ${
+              className={`bg-gray-50 border rounded-[11px] px-4 py-3 text-[17px] text-ink ${
                 fieldErrors.email ? 'border-red-500' : 'border-[rgba(0,0,0,0.08)]'
               }`}
             />
@@ -186,7 +186,7 @@ export default function SignupScreen() {
               autoComplete="new-password"
               returnKeyType="done"
               onSubmitEditing={handleSignup}
-              className={`bg-gray-50 border rounded-xl px-4 py-3 text-[17px] text-ink ${
+              className={`bg-gray-50 border rounded-[11px] px-4 py-3 text-[17px] text-ink ${
                 fieldErrors.password ? 'border-red-500' : 'border-[rgba(0,0,0,0.08)]'
               }`}
             />
