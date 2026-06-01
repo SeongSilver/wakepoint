@@ -273,7 +273,7 @@ git add . && git commit -m "feat: ..." && git push    # 커밋 + push
 | 카카오 Maven 저장소 | 해결 | expo-build-properties extraMavenRepos 추가 |
 | expo-font 누락 | 해결 | npx expo install expo-font 완료 |
 | 백그라운드 발열 | 부분해결 | Accuracy.Balanced 적용, 실기기 재검증 필요 |
-| map 탭 중복 | 미해결 | map.tsx → Redirect, profile.tsx로 교체 필요 |
+| map 탭 중복 | 해결 | map.tsx 삭제, profile 탭으로 교체 완료 |
 
 ---
 
