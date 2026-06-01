@@ -12,9 +12,9 @@ import {
   Platform,
   Alert,
   ScrollView,
-  StatusBar,
   Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRecording } from '@/hooks/useRecording';
 import MapView, { Marker, Circle, Callout, MapPressEvent, PoiClickEvent, Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,9 +49,6 @@ const SEOUL_REGION: Region = {
   longitudeDelta: 0.08,
 };
 
-const STATUS_BAR_H = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 44;
-const SEARCH_TOP = STATUS_BAR_H + 8;
-
 const ALARM_MARKER = require('../../assets/images/icon-point.png');
 
 interface SelectedLocation {
@@ -69,6 +66,9 @@ interface KakaoPlace {
 }
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
+  const SEARCH_TOP = insets.top + 16;
+
   const mapRef = useRef<MapView>(null);
   const panelAnim = useRef(new Animated.Value(0)).current;
   const searchInputRef = useRef<TextInput>(null);

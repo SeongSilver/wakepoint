@@ -14,6 +14,17 @@ import { registerPushToken, setupPushListeners } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
 import { useTrackingSync } from '@/hooks/useTrackingSync';
 import { useFriendAlarmListener } from '@/hooks/useFriendAlarmListener';
+import { useUserStore } from '@/store/userStore';
+import { UserProfile } from '@/types';
+
+async function loadProfile(userId: string) {
+  const { data } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  if (data) useUserStore.getState().setProfile(data as UserProfile);
+}
 
 // Kakao SDK의 androidExecutionParams는 경로 없는 dawasseo://?from=xxx 형태를 생성한다.
 // Expo Router는 이를 root로 라우팅하므로, /invite 로 수동 전달하기 위해 직접 파싱한다.
@@ -64,6 +75,7 @@ export default function RootLayout() {
           if (session) {
             registerPushToken(session.user.id);
             cleanupPushListeners = setupPushListeners(session.user.id);
+            loadProfile(session.user.id);
             if (inviteFrom) {
               router.replace({ pathname: '/invite', params: { from: inviteFrom } });
             } else {
@@ -89,6 +101,7 @@ export default function RootLayout() {
         registerPushToken(session!.user.id);
         cleanupPushListeners?.();
         cleanupPushListeners = setupPushListeners(session!.user.id);
+        loadProfile(session!.user.id);
         if (pendingInviteFrom) {
           const from = pendingInviteFrom;
           pendingInviteFrom = null;
@@ -99,6 +112,7 @@ export default function RootLayout() {
       } else if (_event === 'SIGNED_OUT') {
         cleanupPushListeners?.();
         cleanupPushListeners = undefined;
+        useUserStore.getState().setProfile(null);
         router.replace('/(auth)/login');
       }
     });
