@@ -50,7 +50,7 @@ dawasseo/
 │   │   ├── index.tsx               # ✅ 완료 — 지도 홈 (풀스크린 지도 + 알람 마커)
 │   │   ├── alarms.tsx              # ✅ 완료 — 알람 목록 + 빈 상태 Lottie
 │   │   ├── friends.tsx             # ✅ 완료 — 친구 관리 + 카카오 초대 + 권한 요청
-│   │   └── profile.tsx             # 🔄 구현 필요 — 마이페이지 + 로그아웃
+│   │   └── profile.tsx             # ✅ 완료 — 마이페이지 + 프로필 + 로그아웃
 │   ├── invite.tsx                  # ✅ 완료 — 카카오 초대 딥링크 수락
 │   ├── privacy.tsx                 # ✅ 완료 — 개인정보처리방침
 │   ├── terms.tsx                   # ✅ 완료 — 이용약관
@@ -150,8 +150,7 @@ dawasseo/
 - useTrackingSync 리렌더링 최적화
 
 ### 🔄 진행 예정 (순서 중요)
-1. **마이페이지 (profile.tsx)** — 프로필 + 로그아웃 + 설정 메뉴
-2. **지도 마커 개선** — icon-point.png + 반경 Circle 뚜렷하게
+1. **지도 마커 개선** — icon-point.png + 반경 Circle 뚜렷하게
 3. **발열 최적화 검증** — 실기기 재테스트
 4. **디자인 시스템 전면 적용** — DESIGN.md 기준, 화면별 순서대로
 5. **커밋 + push + APK 재빌드**
@@ -181,22 +180,22 @@ alarm_permissions — id, requester_id, target_id,
 > Apple 디자인 언어 기반. 단일 액센트. 여백이 곧 구조.
 
 ```
-Primary       #4F46E5   indigo-600   모든 인터랙티브 요소 (유일한 액센트)
+Primary       #0066cc   —            모든 인터랙티브 요소 (유일한 액센트, Apple blue)
 Success       #10B981   emerald-500  활성 알람, 수락
 Danger        #ef4444   red-500      삭제, 오류
 Canvas        #ffffff   white        기본 배경
-Parchment     #f5f5f7   gray-50      섹션 배경, 카드
+Parchment     #f5f5f7   —            섹션 배경, 카드
 Dark Tile     #272729   —            다크 섹션 (마이페이지 상단 등)
-Ink           #1d1d1f   gray-900     제목, 본문
+Ink           #1d1d1f   —            제목, 본문
 Tab Bar BG    #000000   black        탭바 배경 (surface-black)
 
 버튼    → rounded-full + active:scale-95
-카드    → rounded-2xl + border border-[#e0e0e0]
-입력    → rounded-xl + bg-gray-50
+카드    → rounded-[18px] + border border-[#e0e0e0]
+입력    → rounded-[11px] + bg-[#f5f5f7]
 검색창  → rounded-full + backdrop-blur
-FAB     → bg-indigo-600 w-14 h-14 rounded-full (absolute bottom-6 right-6)
-탭바    → bg-black, 활성 indigo-400, 비활성 gray-500
-마커    → strokeColor rgba(79,70,229,0.9), fillColor rgba(79,70,229,0.15)
+FAB     → bg-[#0066cc] w-14 h-14 rounded-full (absolute bottom-6 right-6)
+탭바    → bg-black, 활성 #2997ff, 비활성 #7a7a7a
+마커    → strokeColor rgba(0,102,204,0.9), fillColor rgba(0,102,204,0.15)
 ```
 
 ---
@@ -273,7 +272,7 @@ git add . && git commit -m "feat: ..." && git push    # 커밋 + push
 | 카카오 Maven 저장소 | 해결 | expo-build-properties extraMavenRepos 추가 |
 | expo-font 누락 | 해결 | npx expo install expo-font 완료 |
 | 백그라운드 발열 | 부분해결 | Accuracy.Balanced 적용, 실기기 재검증 필요 |
-| map 탭 중복 | 해결 | map.tsx 삭제, profile 탭으로 교체 완료 |
+| map 탭 → profile 탭 교체 | 해결 | map.tsx 삭제, profile.tsx 구현 완료 |
 
 ---
 
