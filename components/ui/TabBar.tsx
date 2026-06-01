@@ -10,9 +10,10 @@ type TabConfig = {
 };
 
 const TAB_CONFIG: Record<string, TabConfig> = {
-  index:   { label: '지도', icon: 'map-outline',      iconActive: 'map' },
-  alarms:  { label: '알람', icon: 'alarm-outline',    iconActive: 'alarm' },
-  friends: { label: '친구', icon: 'people-outline',   iconActive: 'people' },
+  index:   { label: '지도',     icon: 'map-outline',           iconActive: 'map' },
+  alarms:  { label: '알람',     icon: 'alarm-outline',         iconActive: 'alarm' },
+  friends: { label: '친구',     icon: 'people-outline',        iconActive: 'people' },
+  profile: { label: '마이페이지', icon: 'person-circle-outline', iconActive: 'person-circle' },
 };
 
 // 스크린 콘텐츠의 paddingBottom 계산에 사용
@@ -29,17 +30,15 @@ export default function TabBar({ state, navigation, descriptors }: BottomTabBarP
     <View
       style={{
         position: 'absolute',
-        left: 16,
-        right: 16,
-        bottom: insets.bottom + 8,
+        left: 0,
+        right: 0,
+        bottom: 0,
         flexDirection: 'row',
-        backgroundColor: '#ffffff',
-        borderRadius: 24,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
+        backgroundColor: '#000000',
         paddingVertical: 8,
         paddingHorizontal: 4,
-        height: TAB_BAR_HEIGHT,
+        paddingBottom: insets.bottom + 8,
+        height: TAB_BAR_HEIGHT + insets.bottom,
         alignItems: 'center',
       }}
     >
@@ -69,29 +68,17 @@ export default function TabBar({ state, navigation, descriptors }: BottomTabBarP
             activeOpacity={0.75}
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
           >
-            {/* 활성 탭 pill 배경 */}
-            <View
-              style={{
-                backgroundColor: focused ? '#4F46E5' : 'transparent',
-                borderRadius: 12,
-                width: 48,
-                height: 30,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 3,
-              }}
-            >
               <Ionicons
                 name={focused ? cfg.iconActive : cfg.icon}
-                size={20}
-                color={focused ? '#ffffff' : '#7a7a7a'}
+                size={22}
+                color={focused ? '#818cf8' : '#6b7280'}
+                style={{ marginBottom: 3 }}
               />
-            </View>
             <Text
               style={{
                 fontSize: 11,
-                fontWeight: focused ? '600' : '400',
-                color: focused ? '#4F46E5' : '#7a7a7a',
+                fontWeight: '400',
+                color: focused ? '#818cf8' : '#6b7280',
                 letterSpacing: -0.1,
               }}
             >

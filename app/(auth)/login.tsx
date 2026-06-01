@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   View,
   Text,
-  Image,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
@@ -101,12 +100,8 @@ export default function LoginScreen() {
       <View className="flex-1 justify-center px-6">
         {/* 로고 */}
         <View className="items-center mb-12">
-          <Image
-            source={require('../../assets/images/logo-basic.png')}
-            className="w-52 h-14"
-            resizeMode="contain"
-          />
-          <Text className="text-sm text-ink-muted mt-3">
+          <Text className="text-4xl font-semibold text-indigo-600">다왔어</Text>
+          <Text className="text-sm text-gray-500 mt-3">
             목적지에 다 왔을 때 알려드려요
           </Text>
         </View>
@@ -122,7 +117,7 @@ export default function LoginScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
-            className="bg-parchment border border-hairline rounded-[18px] px-4 py-3 text-[17px] text-ink"
+            className="bg-gray-50 border border-[rgba(0,0,0,0.08)] rounded-xl px-4 py-3 text-[17px] text-ink"
           />
         </View>
 
@@ -136,7 +131,7 @@ export default function LoginScreen() {
             placeholderTextColor="#7a7a7a"
             secureTextEntry
             autoComplete="password"
-            className="bg-parchment border border-hairline rounded-[18px] px-4 py-3 text-[17px] text-ink"
+            className="bg-gray-50 border border-[rgba(0,0,0,0.08)] rounded-xl px-4 py-3 text-[17px] text-ink"
           />
         </View>
 

@@ -211,7 +211,7 @@ export default function FriendsScreen() {
 
   if (!profile) {
     return (
-      <SafeAreaView className="flex-1 bg-parchment items-center justify-center px-8">
+      <SafeAreaView className="flex-1 bg-white items-center justify-center px-8">
         <Ionicons name="person-circle-outline" size={64} color="#7a7a7a" />
         <Text className="text-[17px] font-semibold text-ink mt-4 text-center">
           로그인이 필요합니다
@@ -422,7 +422,7 @@ export default function FriendsScreen() {
   ) : null;
 
   return (
-    <SafeAreaView className="flex-1 bg-parchment" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       {/* 헤더 */}
       <View className="px-5 pt-2 pb-4">
         <Text className="text-[28px] font-semibold text-ink">친구</Text>
@@ -430,7 +430,7 @@ export default function FriendsScreen() {
 
       {/* 수신된 알람 권한 요청 배너 */}
       {receivedPending.length > 0 && (
-        <View className="mx-4 mb-2 bg-canvas border border-hairline rounded-2xl p-4">
+        <View className="mx-4 mb-2 bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
           <View className="flex-row items-center mb-3">
             <Ionicons name="notifications-outline" size={16} color="#4F46E5" />
             <Text className="text-[13px] font-semibold text-primary ml-1.5">
@@ -463,7 +463,7 @@ export default function FriendsScreen() {
 
       {/* 카카오톡 초대 버튼 (하단 고정) */}
       <View
-        className="px-5 py-3 bg-parchment border-t border-hairline"
+        className="px-5 py-3 bg-white border-t border-[#e0e0e0]"
       >
         <TouchableOpacity
           onPress={handleKakaoInvite}

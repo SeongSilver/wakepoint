@@ -10,6 +10,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: '지도' }} />
       <Tabs.Screen name="alarms" options={{ title: '알람' }} />
       <Tabs.Screen name="friends" options={{ title: '친구' }} />
+      <Tabs.Screen name="profile" options={{ title: '마이페이지' }} />
+      <Tabs.Screen name="map" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -427,9 +427,9 @@ export default function HomeScreen() {
             <Circle
               center={{ latitude: alarm.target_lat, longitude: alarm.target_lng }}
               radius={alarm.radius_km * 1000}
-              strokeColor="rgba(79, 70, 229, 0.20)"
-              strokeWidth={1}
-              fillColor="rgba(79, 70, 229, 0.06)"
+              strokeColor="rgba(79,70,229,0.9)"
+              strokeWidth={2.5}
+              fillColor="rgba(79,70,229,0.15)"
             />
           </Fragment>
         ))}
@@ -444,9 +444,9 @@ export default function HomeScreen() {
             <Circle
               center={{ latitude: selected.latitude, longitude: selected.longitude }}
               radius={radiusKm * 1000}
-              strokeColor="#4F46E5"
-              strokeWidth={2}
-              fillColor="rgba(79, 70, 229, 0.12)"
+              strokeColor="rgba(79,70,229,0.9)"
+              strokeWidth={2.5}
+              fillColor="rgba(79,70,229,0.15)"
             />
           </>
         )}
@@ -460,11 +460,6 @@ export default function HomeScreen() {
             height: 44,
             borderWidth: 1,
             borderColor: 'rgba(0,0,0,0.08)',
-            elevation: 4,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.12,
-            shadowRadius: 8,
           }}
         >
           <Ionicons name="search" size={18} color="#7a7a7a" style={{ marginRight: 8 }} />

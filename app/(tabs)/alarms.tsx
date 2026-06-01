@@ -18,7 +18,6 @@ import { useAlarmPermissions, ReceivedPermissionRequest } from '@/hooks/useAlarm
 import { useUserStore } from '@/store/userStore';
 import { Alarm, AlarmRingState } from '@/types';
 import { formatDistance } from '@/lib/location';
-import AppHeader from '@/components/ui/AppHeader';
 
 const RINGING_KEY = 'wakepoint-ringing';
 
@@ -34,8 +33,8 @@ function AlarmCard({ alarm, onDelete }: { alarm: Alarm; onDelete: (id: string) =
               {alarm.target_address || '주소 없음'}
             </Text>
           </View>
-          <View className={`rounded-full px-2 py-0.5 ${alarm.is_active ? 'bg-primary/10' : 'bg-parchment'}`}>
-            <Text className={`text-xs font-medium ${alarm.is_active ? 'text-primary' : 'text-ink-muted'}`}>
+          <View className={`rounded-full px-2 py-0.5 ${alarm.is_active ? 'bg-emerald-100' : 'bg-gray-100'}`}>
+            <Text className={`text-xs font-normal ${alarm.is_active ? 'text-emerald-700' : 'text-gray-500'}`}>
               {formatDistance(alarm.radius_km)}
             </Text>
           </View>
@@ -186,11 +185,12 @@ export default function AlarmsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-parchment">
-      <AppHeader>
+      <View className="flex-row items-center justify-between px-5 pt-4 pb-3">
+        <Text className="text-3xl font-semibold text-gray-900">알람</Text>
         {activeAlarms.length > 0 && (
-          <Text className="text-sm text-ink-muted">{activeAlarms.length}개 활성화됨</Text>
+          <Text className="text-sm text-gray-500">{activeAlarms.length}개 활성화됨</Text>
         )}
-      </AppHeader>
+      </View>
 
       {/* 알람 울리는 중 배너 */}
       {ringingAlarm && (
