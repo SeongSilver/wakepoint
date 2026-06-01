@@ -17,7 +17,7 @@ const TAB_CONFIG: Record<string, TabConfig> = {
 };
 
 // 스크린 콘텐츠의 paddingBottom 계산에 사용
-export const TAB_BAR_HEIGHT = 72;
+export const TAB_BAR_HEIGHT = 80;
 
 export default function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -66,17 +66,17 @@ export default function TabBar({ state, navigation, descriptors }: BottomTabBarP
             key={route.key}
             onPress={onPress}
             activeOpacity={0.75}
-            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 }}
           >
               <Ionicons
                 name={focused ? cfg.iconActive : cfg.icon}
-                size={22}
+                size={26}
                 color={focused ? '#818cf8' : '#6b7280'}
-                style={{ marginBottom: 3 }}
+                style={{ marginBottom: 5 }}
               />
             <Text
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: '400',
                 color: focused ? '#818cf8' : '#6b7280',
                 letterSpacing: -0.1,

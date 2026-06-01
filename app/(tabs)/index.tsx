@@ -530,24 +530,12 @@ export default function HomeScreen() {
       </View>
 
       {/* 탭 안내 */}
-      {!panelVisible && !isSearchFocused && (
-        <View
-          className="absolute self-center bg-tile-dark px-5 py-2.5 rounded-full flex-row items-center"
-          style={{ top: SEARCH_TOP + 52, gap: 6 }}
-        >
-          <Ionicons name="location-sharp" size={13} color="#ffffff" />
-          <Text className="text-white text-sm font-medium">
-            지도를 탭해서 목적지를 설정하세요
-          </Text>
-        </View>
-      )}
-
       {/* 내 위치 버튼 */}
       <TouchableOpacity
         onPress={handleMyLocation}
         className="absolute right-4 w-11 h-11 rounded-full items-center justify-center"
         style={{
-          top: SEARCH_TOP + 52,
+          top: SEARCH_TOP + 56,
           backgroundColor: 'rgba(210,210,215,0.64)',
         }}
       >

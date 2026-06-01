@@ -23,27 +23,30 @@ const RINGING_KEY = 'wakepoint-ringing';
 
 function AlarmCard({ alarm, onDelete }: { alarm: Alarm; onDelete: (id: string) => void }) {
   return (
-    <View className="flex-row bg-canvas rounded-2xl mx-4 mb-3 border border-hairline overflow-hidden">
-      <View className={`w-1 ${alarm.is_active ? 'bg-primary' : 'bg-[#e0e0e0]'}`} />
-      <View className="flex-1 p-4">
-        <View className="flex-row items-start justify-between">
-          <View className="flex-1 mr-3">
-            <Text className="text-[17px] font-semibold text-ink">{alarm.label}</Text>
-            <Text className="text-sm text-ink-muted mt-1" numberOfLines={1}>
-              {alarm.target_address || '주소 없음'}
-            </Text>
-          </View>
+    <View className="bg-canvas rounded-2xl mx-4 mb-3 border border-hairline overflow-hidden">
+      <View className="px-4 pt-4 pb-4">
+        {/* 1행: 소형 레이블 + 상태 배지 */}
+        <View className="flex-row items-center justify-between mb-2">
+          <Text className="text-sm text-ink-muted" numberOfLines={1} style={{ flex: 1, marginRight: 8 }}>
+            {alarm.label}
+          </Text>
           <View className={`rounded-full px-2 py-0.5 ${alarm.is_active ? 'bg-emerald-100' : 'bg-gray-100'}`}>
             <Text className={`text-xs font-normal ${alarm.is_active ? 'text-emerald-700' : 'text-gray-500'}`}>
-              {formatDistance(alarm.radius_km)}
+              {alarm.is_active ? '활성' : '비활성'}
             </Text>
           </View>
         </View>
 
-        <View className="flex-row items-center mt-3 pt-3 border-t border-hairline">
+        {/* 2행: 대형 목적지 주소 */}
+        <Text className="text-xl font-semibold text-ink mb-3" numberOfLines={2}>
+          {alarm.target_address || alarm.label}
+        </Text>
+
+        {/* 3행: 반경 정보 + 삭제 버튼 */}
+        <View className="flex-row items-center">
           <View className="flex-row items-center flex-1">
-            <View className={`w-2 h-2 rounded-full mr-2 ${alarm.is_active ? 'bg-primary' : 'bg-[#e0e0e0]'}`} />
-            <Text className="text-xs text-ink-muted">{alarm.is_active ? '활성화됨' : '비활성'}</Text>
+            <Ionicons name="location-outline" size={14} color="#6b7280" />
+            <Text className="text-sm text-ink-muted ml-1.5">{formatDistance(alarm.radius_km)}</Text>
           </View>
           <TouchableOpacity
             onPress={() => onDelete(alarm.id)}
