@@ -39,7 +39,7 @@ export default function ProfileScreen() {
         className="bg-[#272729] items-center px-6 pb-10"
         style={{ paddingTop: insets.top + 24 }}
       >
-        <View className="w-20 h-20 rounded-full bg-indigo-600 items-center justify-center mb-4">
+        <View className="w-20 h-20 rounded-full bg-[#0066cc] items-center justify-center mb-4">
           <Text className="text-white text-3xl font-semibold">{initial}</Text>
         </View>
         <Text className="text-white font-semibold text-2xl">
@@ -52,7 +52,7 @@ export default function ProfileScreen() {
 
       <View className="px-4 pt-6 pb-8">
         {/* 메뉴 섹션 */}
-        <View className="bg-white rounded-2xl border border-[#e0e0e0] overflow-hidden mb-6">
+        <View className="bg-white rounded-[18px] border border-[#e0e0e0] overflow-hidden mb-6">
           <TouchableOpacity
             onPress={() => router.push('/privacy')}
             className="flex-row items-center px-4 py-4 active:bg-gray-50"

@@ -96,7 +96,7 @@ export default function InviteScreen() {
     <View className="flex-1 items-center justify-center bg-canvas px-8">
       {status === 'processing' ? (
         <>
-          <ActivityIndicator size="large" color="#4F46E5" />
+          <ActivityIndicator size="large" color="#0066cc" />
           <Text className="text-[17px] font-semibold text-ink mt-4">{title}</Text>
           <Text className="text-[14px] text-ink-muted mt-2 text-center">{sub}</Text>
         </>
