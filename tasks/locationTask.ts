@@ -5,7 +5,7 @@ import { calculateDistance } from '@/lib/location';
 import { triggerAlarm } from '@/lib/alarm';
 import { useAlarmStore } from '@/store/alarmStore';
 import { supabase } from '@/lib/supabase';
-import { AlarmRingState } from '@/types';
+import { Alarm, AlarmRingState } from '@/types';
 
 const RINGING_KEY = 'wakepoint-ringing';
 
@@ -25,7 +25,20 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
   const current = locations[0];
   if (!current) return;
 
-  const { activeAlarms, clearTriggered } = useAlarmStore.getState();
+  const { clearTriggered } = useAlarmStore.getState();
+
+  // Zustand persist는 AsyncStorage에서 비동기 로드 → 프로세스 재시작 직후 store가
+  // 아직 hydrate 전일 수 있음. 빈 배열이면 AsyncStorage에서 직접 읽어 fallback.
+  let activeAlarms: Alarm[] = useAlarmStore.getState().activeAlarms;
+  if (activeAlarms.length === 0) {
+    try {
+      const raw = await AsyncStorage.getItem('alarm-store');
+      if (raw) {
+        const parsed = JSON.parse(raw) as { state?: { activeAlarms?: Alarm[] } };
+        activeAlarms = parsed?.state?.activeAlarms ?? [];
+      }
+    } catch {}
+  }
 
   // 활성 알람이 없으면 즉시 추적 중단
   if (activeAlarms.length === 0) {

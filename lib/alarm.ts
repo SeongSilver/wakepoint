@@ -7,6 +7,12 @@ const ALARM_CHANNEL_ID = 'wakepoint-alarm';
 
 /** 앱 최상단(RootLayout)에서 한 번 호출 */
 export async function initNotifications() {
+  // Android 13+(API 33) 알림 런타임 권한 요청 — 미허용 시 scheduleNotificationAsync 무음 실패
+  const { status } = await Notifications.requestPermissionsAsync();
+  if (status !== 'granted') {
+    console.error('[Notifications] 알림 권한 미허용 — 알람이 표시되지 않습니다');
+  }
+
   // Android 알림 채널 생성
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(ALARM_CHANNEL_ID, {

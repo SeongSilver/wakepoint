@@ -52,7 +52,7 @@ function FriendAlarmSync() {
 
 export default function RootLayout() {
   useEffect(() => {
-    initNotifications();
+    initNotifications().catch((e) => console.error('[Layout] initNotifications:', e));
     let cleanupPushListeners: (() => void) | undefined;
 
     // Warm-start: 앱 실행 중에 Kakao 초대 링크 수신
