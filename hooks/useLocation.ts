@@ -74,9 +74,15 @@ export function useLocation() {
       }
 
       watchSubRef.current = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.Balanced, timeInterval: 10_000, distanceInterval: 30 },
+        { accuracy: Location.Accuracy.Balanced, timeInterval: 30_000, distanceInterval: 100 },
         async (loc) => {
           const { activeAlarms, clearTriggered } = useAlarmStore.getState();
+          if (activeAlarms.length === 0) {
+            watchSubRef.current?.remove();
+            watchSubRef.current = null;
+            setIsTracking(false);
+            return;
+          }
           for (const alarm of activeAlarms) {
             const dist = calculateDistance(
               loc.coords.latitude,
@@ -88,6 +94,11 @@ export function useLocation() {
               clearTriggered(alarm.id);
               await triggerAlarm(alarm);
             }
+          }
+          if (useAlarmStore.getState().activeAlarms.length === 0) {
+            watchSubRef.current?.remove();
+            watchSubRef.current = null;
+            setIsTracking(false);
           }
         }
       );
@@ -112,12 +123,13 @@ export function useLocation() {
     await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
       accuracy: Location.Accuracy.Balanced,
       timeInterval: 30_000,
-      distanceInterval: 50,
+      distanceInterval: 100,
       showsBackgroundLocationIndicator: true,
       foregroundService: {
         notificationTitle: '다왔어 실행 중',
         notificationBody: '목적지 도착 알림을 모니터링 중입니다',
         notificationColor: '#0066cc',
+        killServiceOnDestroy: true,
       },
     });
     setIsTracking(true);
