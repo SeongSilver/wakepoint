@@ -118,7 +118,7 @@ export default function SignupScreen() {
           {/* 헤더 */}
           <View className="items-center mb-10">
             <Text className="text-4xl font-semibold text-[#0066cc]">다왔어</Text>
-            <Text className="text-sm text-gray-500 mt-2">계정을 만들어 시작해보세요</Text>
+            <Text className="text-sm text-[#7a7a7a] mt-2">계정을 만들어 시작해보세요</Text>
           </View>
 
           {/* 닉네임 */}
@@ -131,11 +131,11 @@ export default function SignupScreen() {
                 setFieldErrors((e) => ({ ...e, nickname: undefined }));
               }}
               placeholder="2자 이상 입력"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor="#7a7a7a"
               autoCapitalize="none"
               returnKeyType="next"
               onSubmitEditing={() => emailRef.current?.focus()}
-              className={`bg-gray-50 border rounded-[11px] px-4 py-3 text-[17px] text-ink ${
+              className={`bg-[#f5f5f7] border rounded-xl px-4 py-3 text-[17px] text-ink ${
                 fieldErrors.nickname ? 'border-red-500' : 'border-[rgba(0,0,0,0.08)]'
               }`}
             />
@@ -155,13 +155,13 @@ export default function SignupScreen() {
                 setFieldErrors((e) => ({ ...e, email: undefined }));
               }}
               placeholder="email@example.com"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor="#7a7a7a"
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
-              className={`bg-gray-50 border rounded-[11px] px-4 py-3 text-[17px] text-ink ${
+              className={`bg-[#f5f5f7] border rounded-xl px-4 py-3 text-[17px] text-ink ${
                 fieldErrors.email ? 'border-red-500' : 'border-[rgba(0,0,0,0.08)]'
               }`}
             />
@@ -181,12 +181,12 @@ export default function SignupScreen() {
                 setFieldErrors((e) => ({ ...e, password: undefined }));
               }}
               placeholder="6자 이상 입력"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor="#7a7a7a"
               secureTextEntry
               autoComplete="new-password"
               returnKeyType="done"
               onSubmitEditing={handleSignup}
-              className={`bg-gray-50 border rounded-[11px] px-4 py-3 text-[17px] text-ink ${
+              className={`bg-[#f5f5f7] border rounded-xl px-4 py-3 text-[17px] text-ink ${
                 fieldErrors.password ? 'border-red-500' : 'border-[rgba(0,0,0,0.08)]'
               }`}
             />

@@ -31,7 +31,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false}>
+    <ScrollView className="flex-1 bg-[#f5f5f7]" showsVerticalScrollIndicator={false}>
       <StatusBar barStyle="light-content" />
 
       {/* 상단 다크 타일 */}
@@ -42,50 +42,50 @@ export default function ProfileScreen() {
         <View className="w-20 h-20 rounded-full bg-[#0066cc] items-center justify-center mb-4">
           <Text className="text-white text-3xl font-semibold">{initial}</Text>
         </View>
-        <Text className="text-white font-semibold text-2xl">
+        <Text className="text-white font-semibold text-[18px]">
           {profile?.nickname ?? '사용자'}
         </Text>
-        <Text className="text-gray-300 text-sm mt-1">
+        <Text className="text-[#cccccc] text-[14px] mt-1">
           {profile?.email ?? ''}
         </Text>
       </View>
 
       <View className="px-4 pt-6 pb-8">
         {/* 메뉴 섹션 */}
-        <View className="bg-white rounded-[18px] border border-[#e0e0e0] overflow-hidden mb-6">
+        <View className="bg-[#f5f5f7] rounded-2xl overflow-hidden mb-6">
           <TouchableOpacity
             onPress={() => router.push('/privacy')}
-            className="flex-row items-center px-4 py-4 active:bg-gray-50"
+            className="flex-row items-center px-4 py-4 active:bg-white"
             style={{ borderBottomWidth: 1, borderBottomColor: '#e0e0e0' }}
           >
             <Ionicons name="shield-outline" size={20} color="#1d1d1f" style={{ marginRight: 12 }} />
-            <Text className="flex-1 text-base text-gray-900">개인정보처리방침</Text>
-            <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+            <Text className="flex-1 text-[17px] text-[#1d1d1f]">개인정보처리방침</Text>
+            <Ionicons name="chevron-forward" size={16} color="#7a7a7a" />
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => router.push('/terms')}
-            className="flex-row items-center px-4 py-4 active:bg-gray-50"
+            className="flex-row items-center px-4 py-4 active:bg-white"
             style={{ borderBottomWidth: 1, borderBottomColor: '#e0e0e0' }}
           >
             <Ionicons name="document-text-outline" size={20} color="#1d1d1f" style={{ marginRight: 12 }} />
-            <Text className="flex-1 text-base text-gray-900">이용약관</Text>
-            <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+            <Text className="flex-1 text-[17px] text-[#1d1d1f]">이용약관</Text>
+            <Ionicons name="chevron-forward" size={16} color="#7a7a7a" />
           </TouchableOpacity>
 
           <View className="flex-row items-center px-4 py-4">
             <Ionicons name="information-circle-outline" size={20} color="#1d1d1f" style={{ marginRight: 12 }} />
-            <Text className="flex-1 text-base text-gray-900">앱 버전</Text>
-            <Text className="text-sm text-gray-500">{APP_VERSION}</Text>
+            <Text className="flex-1 text-[17px] text-[#1d1d1f]">앱 버전</Text>
+            <Text className="text-[14px] text-[#7a7a7a]">{APP_VERSION}</Text>
           </View>
         </View>
 
         {/* 로그아웃 버튼 */}
         <TouchableOpacity
           onPress={handleLogout}
-          className="bg-red-500 rounded-full py-3.5 items-center active:scale-95"
+          className="bg-[#ef4444] rounded-full py-3.5 items-center active:scale-95"
         >
-          <Text className="text-white font-semibold text-base">로그아웃</Text>
+          <Text className="text-white font-semibold text-[17px]">로그아웃</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

@@ -23,15 +23,17 @@ const RINGING_KEY = 'wakepoint-ringing';
 
 function AlarmCard({ alarm, onDelete }: { alarm: Alarm; onDelete: (id: string) => void }) {
   return (
-    <View className="bg-canvas rounded-[18px] mx-4 mb-3 border border-hairline overflow-hidden">
-      <View className="px-4 pt-4 pb-4">
+    <View className="bg-white rounded-2xl mx-4 mb-3 border border-[#e0e0e0] overflow-hidden flex-row">
+      {/* 왼쪽 상태 인디케이터 */}
+      <View className={`w-1 ${alarm.is_active ? 'bg-[#0066cc]' : 'bg-[#e0e0e0]'}`} />
+      <View className="flex-1 p-6">
         {/* 1행: 소형 레이블 + 상태 배지 */}
         <View className="flex-row items-center justify-between mb-2">
           <Text className="text-sm text-ink-muted" numberOfLines={1} style={{ flex: 1, marginRight: 8 }}>
             {alarm.label}
           </Text>
-          <View className={`rounded-full px-2 py-0.5 ${alarm.is_active ? 'bg-emerald-100' : 'bg-gray-100'}`}>
-            <Text className={`text-xs font-normal ${alarm.is_active ? 'text-emerald-700' : 'text-gray-500'}`}>
+          <View className={`rounded-full px-2 py-0.5 ${alarm.is_active ? 'bg-[rgba(0,102,204,0.1)]' : 'bg-[#f5f5f7]'}`}>
+            <Text className={`text-xs font-normal ${alarm.is_active ? 'text-[#0066cc]' : 'text-[#7a7a7a]'}`}>
               {alarm.is_active ? '활성' : '비활성'}
             </Text>
           </View>
@@ -45,14 +47,14 @@ function AlarmCard({ alarm, onDelete }: { alarm: Alarm; onDelete: (id: string) =
         {/* 3행: 반경 정보 + 삭제 버튼 */}
         <View className="flex-row items-center">
           <View className="flex-row items-center flex-1">
-            <Ionicons name="location-outline" size={14} color="#6b7280" />
+            <Ionicons name="location-outline" size={14} color="#7a7a7a" />
             <Text className="text-sm text-ink-muted ml-1.5">{formatDistance(alarm.radius_km)}</Text>
           </View>
           <TouchableOpacity
             onPress={() => onDelete(alarm.id)}
             className="bg-danger rounded-full px-3 py-1.5 active:scale-95"
           >
-            <Text className="text-xs font-medium text-white">삭제</Text>
+            <Text className="text-xs font-normal text-white">삭제</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -187,17 +189,17 @@ export default function AlarmsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-parchment">
+    <SafeAreaView className="flex-1 bg-[#f5f5f7]">
       <View className="flex-row items-center justify-between px-5 pt-4 pb-3">
-        <Text className="text-3xl font-semibold text-gray-900">알람</Text>
+        <Text className="text-[30px] font-semibold text-[#1d1d1f]">알람</Text>
         {activeAlarms.length > 0 && (
-          <Text className="text-sm text-gray-500">{activeAlarms.length}개 활성화됨</Text>
+          <Text className="text-sm text-[#7a7a7a]">{activeAlarms.length}개 활성화됨</Text>
         )}
       </View>
 
       {/* 알람 울리는 중 배너 */}
       {ringingAlarm && (
-        <View className="mx-4 mb-2 bg-canvas border border-hairline rounded-[18px] overflow-hidden">
+        <View className="mx-4 mb-2 bg-white border border-[#e0e0e0] rounded-2xl overflow-hidden">
           <View className="flex-row items-center px-4 py-3">
             <View
               className="w-9 h-9 rounded-full items-center justify-center mr-3"
@@ -224,7 +226,7 @@ export default function AlarmsScreen() {
 
       {/* 권한 요청 배너 */}
       {receivedPending.length > 0 && (
-        <View className="mx-4 mb-2 bg-canvas border border-hairline rounded-[18px] p-4">
+        <View className="mx-4 mb-2 bg-white border border-[#e0e0e0] rounded-2xl p-4">
           <View className="flex-row items-center mb-3">
             <Ionicons name="notifications-outline" size={16} color="#0066cc" />
             <Text className="text-[13px] font-semibold text-primary ml-1.5">

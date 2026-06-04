@@ -228,7 +228,7 @@ export default function FriendsScreen() {
     const isRequesting = requestingId === item.profile.id;
 
     return (
-      <View className="bg-canvas border border-hairline rounded-[18px] px-4 py-3 mb-3">
+      <View className="bg-white border border-[#e0e0e0] rounded-2xl px-4 py-3 mb-3">
         <View className="flex-row items-center">
           <View className="w-11 h-11 rounded-full bg-parchment items-center justify-center mr-3">
             <Text className="text-[17px] font-semibold text-primary">
@@ -303,7 +303,7 @@ export default function FriendsScreen() {
   const ListHeader = (
     <View>
       {/* 검색 카드 */}
-      <View className="bg-canvas border border-hairline rounded-[18px] p-4 mb-5">
+      <View className="bg-white border border-[#e0e0e0] rounded-2xl p-4 mb-5">
         <Text className="text-[15px] font-semibold text-ink mb-3">이메일로 친구 추가</Text>
 
         <View className="flex-row items-center gap-2">
@@ -425,12 +425,12 @@ export default function FriendsScreen() {
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       {/* 헤더 */}
       <View className="px-5 pt-2 pb-4">
-        <Text className="text-[28px] font-semibold text-ink">친구</Text>
+        <Text className="text-[30px] font-semibold text-ink">친구</Text>
       </View>
 
       {/* 수신된 알람 권한 요청 배너 */}
       {receivedPending.length > 0 && (
-        <View className="mx-4 mb-2 bg-[rgba(0,102,204,0.06)] border border-[rgba(0,102,204,0.2)] rounded-[18px] p-4">
+        <View className="mx-4 mb-2 bg-[rgba(0,102,204,0.06)] border border-[rgba(0,102,204,0.2)] rounded-2xl p-4">
           <View className="flex-row items-center mb-3">
             <Ionicons name="notifications-outline" size={16} color="#0066cc" />
             <Text className="text-[13px] font-semibold text-primary ml-1.5">
@@ -468,14 +468,14 @@ export default function FriendsScreen() {
         <TouchableOpacity
           onPress={handleKakaoInvite}
           disabled={inviting}
-          className={`flex-row items-center justify-center bg-kakao rounded-full py-3.5 active:scale-95 ${inviting ? 'opacity-60' : ''}`}
+          className={`flex-row items-center justify-center bg-[#FEE500] rounded-full py-3.5 active:scale-95 ${inviting ? 'opacity-60' : ''}`}
         >
           {inviting ? (
             <ActivityIndicator color="#000000" />
           ) : (
             <>
               <Ionicons name="chatbubble-ellipses" size={18} color="#000000" style={{ marginRight: 8 }} />
-              <Text className="text-black font-semibold text-[17px]">카카오톡으로 초대</Text>
+              <Text className="text-[#1d1d1f] font-semibold text-[17px]">카카오톡으로 초대</Text>
             </>
           )}
         </TouchableOpacity>

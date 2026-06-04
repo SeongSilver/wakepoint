@@ -101,7 +101,7 @@ export default function LoginScreen() {
         {/* 로고 */}
         <View className="items-center mb-12">
           <Text className="text-4xl font-semibold text-[#0066cc]">다왔어</Text>
-          <Text className="text-sm text-gray-500 mt-3">
+          <Text className="text-sm text-[#7a7a7a] mt-3">
             목적지에 다 왔을 때 알려드려요
           </Text>
         </View>
@@ -117,7 +117,7 @@ export default function LoginScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
-            className="bg-gray-50 border border-[rgba(0,0,0,0.08)] rounded-[11px] px-4 py-3 text-[17px] text-ink"
+            className="bg-[#f5f5f7] border border-[rgba(0,0,0,0.08)] rounded-xl px-4 py-3 text-[17px] text-ink"
           />
         </View>
 
@@ -131,7 +131,7 @@ export default function LoginScreen() {
             placeholderTextColor="#7a7a7a"
             secureTextEntry
             autoComplete="password"
-            className="bg-gray-50 border border-[rgba(0,0,0,0.08)] rounded-[11px] px-4 py-3 text-[17px] text-ink"
+            className="bg-[#f5f5f7] border border-[rgba(0,0,0,0.08)] rounded-xl px-4 py-3 text-[17px] text-ink"
           />
         </View>
 
@@ -202,16 +202,16 @@ export default function LoginScreen() {
               onPress={() => router.push('/terms')}
               hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
             >
-              <Text className="text-sm text-primary">이용약관</Text>
+              <Text className="text-xs text-[#7a7a7a]">이용약관</Text>
             </TouchableOpacity>
-            <Text className="text-sm text-ink-muted mx-1.5">·</Text>
+            <Text className="text-xs text-[#7a7a7a] mx-1.5">·</Text>
             <TouchableOpacity
               onPress={() => router.push('/privacy')}
               hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
             >
-              <Text className="text-sm text-primary">개인정보처리방침</Text>
+              <Text className="text-xs text-[#7a7a7a]">개인정보처리방침</Text>
             </TouchableOpacity>
-            <Text className="text-sm text-ink-muted ml-1">보기</Text>
+            <Text className="text-xs text-[#7a7a7a] ml-1">보기</Text>
           </View>
         </View>
 
