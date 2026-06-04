@@ -402,6 +402,8 @@ export default function HomeScreen() {
             <Marker
               coordinate={{ latitude: alarm.target_lat, longitude: alarm.target_lng }}
               tracksViewChanges={false}
+              anchor={{ x: 0.5, y: 1.0 }}
+              zIndex={1}
             >
               <Image
                 source={ALARM_MARKER}
@@ -409,16 +411,11 @@ export default function HomeScreen() {
                 resizeMode="contain"
               />
               <Callout>
-                <View style={{ padding: 8, minWidth: 140 }}>
-                  <Text style={{ fontWeight: '600', fontSize: 14, color: '#1D1D1F', marginBottom: 2 }}>
+                <View className="bg-white rounded-xl border border-[#e0e0e0] p-2" style={{ minWidth: 140 }}>
+                  <Text className="text-[14px] font-semibold text-[#1d1d1f] mb-0.5">
                     {alarm.label}
                   </Text>
-                  {alarm.target_address ? (
-                    <Text style={{ fontSize: 12, color: '#7a7a7a', marginBottom: 2 }} numberOfLines={2}>
-                      {alarm.target_address}
-                    </Text>
-                  ) : null}
-                  <Text style={{ fontSize: 12, color: '#0066cc', fontWeight: '600' }}>
+                  <Text className="text-[12px] font-semibold text-[#0066cc]">
                     {formatDistance(alarm.radius_km)}
                   </Text>
                 </View>
