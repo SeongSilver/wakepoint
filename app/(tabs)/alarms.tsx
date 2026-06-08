@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   AppState,
+  Vibration,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Audio } from 'expo-av';
-import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlarmStore } from '@/store/alarmStore';
 import { useAlarmPermissions, ReceivedPermissionRequest } from '@/hooks/useAlarmPermissions';
@@ -154,7 +154,10 @@ export default function AlarmsScreen() {
 
   useEffect(() => {
     if (!ringingAlarm) return;
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+
+    // 반복 진동: 700ms 울림 → 400ms 쉬고 반복 (중지 버튼 누를 때까지)
+    Vibration.vibrate([0, 700, 400], true);
+
     if (ringingAlarm.soundType === 'custom' && ringingAlarm.soundUri) {
       (async () => {
         try {
@@ -169,7 +172,9 @@ export default function AlarmsScreen() {
         }
       })();
     }
+
     return () => {
+      Vibration.cancel();
       ringerSoundRef.current?.stopAsync().catch(() => {});
       ringerSoundRef.current?.unloadAsync().catch(() => {});
       ringerSoundRef.current = null;
@@ -177,6 +182,7 @@ export default function AlarmsScreen() {
   }, [ringingAlarm]);
 
   const stopRinger = async () => {
+    Vibration.cancel();
     if (ringerSoundRef.current) {
       try {
         await ringerSoundRef.current.stopAsync();

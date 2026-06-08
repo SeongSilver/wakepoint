@@ -22,12 +22,15 @@ export async function initNotifications() {
 
   // Android 알림 채널 생성
   if (Platform.OS === 'android') {
+    // 기존 채널 삭제 후 재생성 — Android는 채널 설정이 immutable이라 변경 반영 안 됨
+    await Notifications.deleteNotificationChannelAsync(ALARM_CHANNEL_ID).catch(() => {});
     await Notifications.setNotificationChannelAsync(ALARM_CHANNEL_ID, {
       name: '다왔어 알람',
       importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
+      vibrationPattern: [0, 700, 400, 700, 400, 700],
       lightColor: '#0066cc',
       sound: 'default',
+      enableVibrate: true,
     });
   }
 

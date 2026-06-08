@@ -26,17 +26,21 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
   if (!current) return;
 
   // Zustand persist는 AsyncStorage에서 비동기 로드 — hydration 완료까지 최대 2초 대기.
-  // 직전 수정의 AsyncStorage fallback 방식은 clearTriggered 호출 시 빈 배열([])을
-  // AsyncStorage에 저장해 나머지 알람 전체를 삭제하는 데이터 손상 버그를 유발함.
-  if (!useAlarmStore.persist.hasHydrated()) {
-    await new Promise<void>((resolve) => {
-      const timeout = setTimeout(resolve, 2000);
-      const unsub = useAlarmStore.persist.onFinishHydration(() => {
-        clearTimeout(timeout);
-        unsub();
-        resolve();
+  // try/catch: persist API 접근 실패 시 task 전체 크래시 방지
+  try {
+    if (!useAlarmStore.persist.hasHydrated()) {
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(resolve, 2000);
+        const unsub = useAlarmStore.persist.onFinishHydration(() => {
+          clearTimeout(timeout);
+          unsub();
+          resolve();
+        });
       });
-    });
+    }
+  } catch {
+    // persist API 접근 불가 시 500ms 대기 후 진행
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
   const { activeAlarms, clearTriggered } = useAlarmStore.getState();
@@ -83,16 +87,10 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
     if (!alarm.id.startsWith('local-')) {
       supabase
         .from('alarms')
-        .update({
-          is_active: false,
-          triggered_at: new Date().toISOString(),
-        })
+        .update({ is_active: false, triggered_at: new Date().toISOString() })
         .eq('id', alarm.id)
         .then(({ error: dbErr }) => {
           if (dbErr) console.error('[LocationTask] DB update failed:', dbErr.message);
-        })
-        .catch((err: unknown) => {
-          console.error('[LocationTask] Supabase network error:', err);
         });
     }
   }
