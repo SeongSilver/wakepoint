@@ -5,7 +5,7 @@ import { calculateDistance } from '@/lib/location';
 import { triggerAlarm } from '@/lib/alarm';
 import { useAlarmStore } from '@/store/alarmStore';
 import { supabase } from '@/lib/supabase';
-import { Alarm, AlarmRingState } from '@/types';
+import { AlarmRingState } from '@/types';
 
 const RINGING_KEY = 'wakepoint-ringing';
 
@@ -25,20 +25,21 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
   const current = locations[0];
   if (!current) return;
 
-  const { clearTriggered } = useAlarmStore.getState();
-
-  // Zustand persist는 AsyncStorage에서 비동기 로드 → 프로세스 재시작 직후 store가
-  // 아직 hydrate 전일 수 있음. 빈 배열이면 AsyncStorage에서 직접 읽어 fallback.
-  let activeAlarms: Alarm[] = useAlarmStore.getState().activeAlarms;
-  if (activeAlarms.length === 0) {
-    try {
-      const raw = await AsyncStorage.getItem('alarm-store');
-      if (raw) {
-        const parsed = JSON.parse(raw) as { state?: { activeAlarms?: Alarm[] } };
-        activeAlarms = parsed?.state?.activeAlarms ?? [];
-      }
-    } catch {}
+  // Zustand persist는 AsyncStorage에서 비동기 로드 — hydration 완료까지 최대 2초 대기.
+  // 직전 수정의 AsyncStorage fallback 방식은 clearTriggered 호출 시 빈 배열([])을
+  // AsyncStorage에 저장해 나머지 알람 전체를 삭제하는 데이터 손상 버그를 유발함.
+  if (!useAlarmStore.persist.hasHydrated()) {
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(resolve, 2000);
+      const unsub = useAlarmStore.persist.onFinishHydration(() => {
+        clearTimeout(timeout);
+        unsub();
+        resolve();
+      });
+    });
   }
+
+  const { activeAlarms, clearTriggered } = useAlarmStore.getState();
 
   // 활성 알람이 없으면 즉시 추적 중단
   if (activeAlarms.length === 0) {

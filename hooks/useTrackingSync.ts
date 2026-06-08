@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Alert, AppState } from 'react-native';
+import { Alert, AppState, Linking } from 'react-native';
 import { useAlarmStore } from '@/store/alarmStore';
 import { useLocation } from '@/hooks/useLocation';
 
@@ -22,7 +22,10 @@ export function useTrackingSync() {
   useEffect(() => {
     if (alarmsCount > 0) {
       startTracking().catch((err: Error) => {
-        Alert.alert('위치 권한 필요', err.message, [{ text: '확인' }]);
+        Alert.alert('위치 권한 필요', err.message, [
+          { text: '닫기', style: 'cancel' },
+          { text: '설정으로 이동', onPress: () => Linking.openSettings() },
+        ]);
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,7 +53,10 @@ export function useTrackingSync() {
 
     if (curr > 0 && prev === 0) {
       startTracking().catch((err: Error) => {
-        Alert.alert('위치 권한 필요', err.message, [{ text: '확인' }]);
+        Alert.alert('위치 권한 필요', err.message, [
+          { text: '닫기', style: 'cancel' },
+          { text: '설정으로 이동', onPress: () => Linking.openSettings() },
+        ]);
       });
     } else if (curr === 0 && prev > 0) {
       stopTracking().catch((err: Error) => {

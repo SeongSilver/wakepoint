@@ -129,7 +129,6 @@ export function useLocation() {
         notificationTitle: '다왔어 실행 중',
         notificationBody: '목적지 도착 알림을 모니터링 중입니다',
         notificationColor: '#0066cc',
-        killServiceOnDestroy: true,
       },
     });
     setIsTracking(true);
