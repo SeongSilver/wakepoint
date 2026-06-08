@@ -373,7 +373,10 @@ export default function HomeScreen() {
         [{ text: '확인', onPress: () => router.push('/(tabs)/alarms') }]
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '저장에 실패했습니다.';
+      const msg =
+        err instanceof Error
+          ? err.message
+          : (err as { message?: string })?.message ?? '저장에 실패했습니다.';
       Alert.alert('저장 실패', msg);
     } finally {
       setSaving(false);
