@@ -95,8 +95,11 @@ export default function HomeScreen() {
     recordingUri,
     isPlaying,
     durationSec,
+    soundSource,
+    fileName,
     startRecording,
     stopRecording,
+    pickAudioFile,
     playPreview,
     uploadRecording,
     clearRecording,
@@ -303,17 +306,13 @@ export default function HomeScreen() {
     const now = new Date().toISOString();
 
     setSaving(true);
-    let uploadedSoundUri: string | undefined;
-    if (soundType === 'custom' && recordingUri && profile?.id) {
-      uploadedSoundUri = (await uploadRecording(profile.id)) ?? undefined;
-      if (!uploadedSoundUri) {
-        Alert.alert('업로드 실패', '녹음 파일 업로드에 실패했습니다. 다시 시도해주세요.');
-        setSaving(false);
-        return;
-      }
-    }
 
     try {
+      let uploadedSoundUri: string | undefined;
+      if (soundType === 'custom' && recordingUri && profile?.id) {
+        uploadedSoundUri = await uploadRecording(profile.id);
+      }
+
       const userId = profile?.id ?? 'local';
       const ownerId = isForFriend && selectedFriend ? selectedFriend.id : userId;
 
@@ -373,10 +372,15 @@ export default function HomeScreen() {
         [{ text: '확인', onPress: () => router.push('/(tabs)/alarms') }]
       );
     } catch (err) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : (err as { message?: string })?.message ?? '저장에 실패했습니다.';
+      // PostgrestError·Storage 에러·일반 Error 모두에서 최대한 원인 노출
+      const e = err as { message?: string; details?: string; hint?: string; code?: string };
+      const parts = [
+        e?.message,
+        e?.details && e.details !== e.message ? e.details : null,
+        e?.hint ? `힌트: ${e.hint}` : null,
+        e?.code ? `코드: ${e.code}` : null,
+      ].filter(Boolean);
+      const msg = parts.length > 0 ? parts.join('\n') : JSON.stringify(err);
       Alert.alert('저장 실패', msg);
     } finally {
       setSaving(false);
@@ -728,7 +732,7 @@ export default function HomeScreen() {
                     style={soundType === 'custom' ? { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 } : undefined}
                   >
                     <Text className={`text-[14px] font-medium ${soundType === 'custom' ? 'text-ink' : 'text-ink-muted'}`}>
-                      내 목소리로 녹음
+                      녹음 · 파일 선택
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -762,13 +766,38 @@ export default function HomeScreen() {
                             ? '녹음 중... 버튼에서 손 떼면 저장'
                             : '버튼을 누르는 동안 녹음됩니다'}
                         </Text>
+
+                        {!isRecording && (
+                          <>
+                            <View className="flex-row items-center w-full my-3">
+                              <View className="flex-1 h-px bg-hairline" />
+                              <Text className="text-[12px] text-ink-muted mx-3">또는</Text>
+                              <View className="flex-1 h-px bg-hairline" />
+                            </View>
+                            <TouchableOpacity
+                              onPress={pickAudioFile}
+                              className="flex-row items-center justify-center bg-canvas border border-hairline rounded-full px-5 py-2.5 active:scale-95"
+                            >
+                              <Ionicons name="folder-open-outline" size={18} color="#0066cc" />
+                              <Text className="ml-2 text-[14px] font-medium text-primary">
+                                기기 파일에서 선택
+                              </Text>
+                            </TouchableOpacity>
+                          </>
+                        )}
                       </View>
                     ) : (
                       <View className="flex-row items-center justify-between">
-                        <View className="flex-row items-center flex-1">
-                          <Ionicons name="musical-notes" size={20} color="#0066cc" />
-                          <Text className="ml-2 text-sm text-ink font-medium">
-                            녹음 완료 ({durationSec}초)
+                        <View className="flex-row items-center flex-1" style={{ marginRight: 8 }}>
+                          <Ionicons
+                            name={soundSource === 'file' ? 'document-outline' : 'musical-notes'}
+                            size={20}
+                            color="#0066cc"
+                          />
+                          <Text className="ml-2 text-sm text-ink font-medium" numberOfLines={1} style={{ flex: 1 }}>
+                            {soundSource === 'file'
+                              ? (fileName ?? '선택한 파일')
+                              : `녹음 완료 (${durationSec}초)`}
                           </Text>
                         </View>
                         <View className="flex-row gap-2">

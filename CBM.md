@@ -40,7 +40,7 @@
 | `useAlarmPermissions.ts` | `useAlarmPermissions()` | sentRequests, receivedPending, acceptedFriends, requestPermission, respondToRequest, getSentStatus | 권한 요청·수락·거절 |
 | `useFriends.ts` | `useFriends()` | friends, searchResult, fetchFriends, searchByEmail, addFriend, removeFriend, isAlreadyFriend | 친구 관리 |
 | `useLocation.ts` | `useLocation()` | isTracking, permission, startTracking, stopTracking | 위치 추적 시작/중단 |
-| `useRecording.ts` | `useRecording()` | isRecording, recordingUri, durationSec, startRecording, stopRecording, playPreview, uploadRecording, clearRecording | 음성 녹음·업로드 |
+| `useRecording.ts` | `useRecording()` | isRecording, recordingUri, durationSec, soundSource, fileName, startRecording, stopRecording, pickAudioFile, playPreview, uploadRecording, clearRecording | 음성 녹음·기기 파일 선택(expo-document-picker)·업로드. uploadRecording은 실패 시 throw(HTTP 본문 노출) |
 | `useTrackingSync.ts` | `useTrackingSync()` | — | 알람 수 변화 → 추적 자동 시작/중단 |
 | `useFriendAlarmListener.ts` | `useFriendAlarmListener()` | — | Supabase Realtime → 친구 알람 스토어 동기화 |
 
